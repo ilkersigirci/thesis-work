@@ -26,8 +26,8 @@ classifiers = [
     "Operating System :: POSIX",
     "Operating System :: Unix",
     "Operating System :: MacOS",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
+    # "Programming Language :: Python :: 3.8",
+    # "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
 ]
 
@@ -48,8 +48,9 @@ placeholder = "thesis_work.scripts.placeholder:placeholder_script"
 # secondary = true
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.11"
+python = "3.10.*"
 deepchem = "^2.7.1"
+streamlit= "^1.19.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.1.2"

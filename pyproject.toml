@@ -54,6 +54,13 @@ streamlit= "^1.19.0"
 py3dmol = "^2.0.1.post1"
 stmol = "^0.0.9"
 matplotlib = "^3.7.1"
+regex = "^2022.10.31"
+transformers = "^4.26.1"
+simpletransformers = "^0.63.9"
+wandb = "^0.13.11"
+bertviz = "^1.4.0"
+# apex = {git = "https://github.com/NVIDIA/apex.git", branch = "master"}
+numpy = "1.21.6" # NOTE: Only needed for `chemberta.load_molnet_dataset`
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.1.2"

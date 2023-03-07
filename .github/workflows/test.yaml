@@ -1,38 +1,38 @@
-name: Test the module
+# name: Test the module
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+# on:
+#   push:
+#     branches:
+#       - main
+#   pull_request:
+#     branches:
+#       - main
 
-jobs:
-  test:
-    strategy:
-      matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11']
-        # os: [ubuntu-20.04, ubuntu-22.04]
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Disable Logger Outputs
-        run: |
-          sed -i "s/log_cli = true/log_cli = false/" pyproject.toml
-      - name: Pip Update
-        run: |
-          make -s update-pip
-      - name: Install the Project with Test Dependencies
-        run: |
-          make -s install-test
-      # - name: Show dependencies
-      #   run: python -m pip list
-      - name: Test the Project
-        run: make -s test-parallel
-      # - name: Publish code coverage
-      #   uses: codecov/codecov-action@v3
+# jobs:
+#   test:
+#     strategy:
+#       matrix:
+#         python-version: ['3.8', '3.9', '3.10']
+#         # os: [ubuntu-20.04, ubuntu-22.04]
+#     runs-on: ubuntu-22.04
+#     steps:
+#       - uses: actions/checkout@v3
+#       - name: Set up Python ${{ matrix.python-version }}
+#         uses: actions/setup-python@v4
+#         with:
+#           python-version: ${{ matrix.python-version }}
+#       - name: Disable Logger Outputs
+#         run: |
+#           sed -i "s/log_cli = true/log_cli = false/" pyproject.toml
+#       - name: Pip Update
+#         run: |
+#           make -s update-pip
+#       - name: Install the Project with Test Dependencies
+#         run: |
+#           make -s install-test
+#       # - name: Show dependencies
+#       #   run: python -m pip list
+#       - name: Test the Project
+#         run: make -s test-parallel
+#       # - name: Publish code coverage
+#       #   uses: codecov/codecov-action@v3

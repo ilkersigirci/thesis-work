@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "python_template"
+name = "thesis_work"
 version = "0.0.0"
-description = "Python Template"
+description = "Thesis Work"
 readme = "README.md"
 
 authors = [
@@ -29,17 +29,16 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
 ]
 
 [tool.poetry.urls]
-repository = "https://github.com/ilkersigirci/python-template"
+repository = "https://github.com/ilkersigirci/thesis-work"
 
 [tool.poetry.build]
 generate-setup-file = false
 
 [tool.poetry.scripts]
-placeholder = "python_template.scripts.placeholder:placeholder_script"
+placeholder = "thesis_work.scripts.placeholder:placeholder_script"
 
 ## poetry source add --secondary private-pypi http://private-pypi/simple/
 # [[tool.poetry.source]]
@@ -49,7 +48,8 @@ placeholder = "python_template.scripts.placeholder:placeholder_script"
 # secondary = true
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.12"
+python = ">=3.8,<3.11"
+deepchem = "^2.7.1"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.1.2"
@@ -82,7 +82,7 @@ addopts = [
 #    "--strict-markers",
 #    "--doctest-modules",
     # NOTE: cov is not working with pycharm debugger. Enable it later!
-#    "--cov python_template",
+#    "--cov thesis_work",
 #    "--cov-report=xml",
 #    "--cov-report html",
 ]
@@ -153,7 +153,7 @@ extend-exclude = [
 [tool.ruff.per-file-ignores]
 "__init__.py" = ["E402", "F401"]
 # "path/to/file.py" = ["E402"]
-# 'python_template/__init__.py' = ['F405', 'F403']
+# 'thesis_work/__init__.py' = ['F405', 'F403']
 
 # [tool.ruff.flake8-quotes]
 # inline-quotes = "single"
@@ -179,7 +179,7 @@ combine-as-imports = true
 # Read more here: https://mypy.readthedocs.io/en/stable/config_file.html#using-a-pyproject-toml-file
 [tool.mypy]
 # python_version = "3.8"
-files = ["python_template"]
+files = ["thesis_work"]
 # exclude = ['^tests/']
 strict = true
 show_error_codes = true
@@ -187,12 +187,12 @@ show_error_codes = true
 
 # TODO: Check whether this is working
 [[tool.mypy.overrides]]
-module = "python_template.tests.*"
+module = "thesis_work.tests.*"
 ignore_missing_imports = true
 check_untyped_defs = true
 
 [tool.coverage.run]
-source = ['python_template']
+source = ['thesis_work']
 branch = true
 context = '${CONTEXT}'
 
@@ -208,7 +208,7 @@ exclude_lines = [
 
 # [tool.coverage.paths]
 # source = [
-#     'python_template/',
+#     'thesis_work/',
 # ]
 
 ######### Local poetry.toml example ##############

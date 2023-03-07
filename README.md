@@ -18,8 +18,8 @@ curl -sSL https://install.python-poetry.org | python3 -
 
 - Install the project dependencies
 ```bash
-conda create -n python-template python=3.8 -y
-conda activate python-template
+conda create -n thesis-work python=3.8 -y
+conda activate thesis-work
 make -s install
 ```
 
@@ -30,19 +30,19 @@ make -s install
 
 ```bash
 # Development build (800 MB)
-docker build --tag python-template --file docker/Dockerfile --target development .
+docker build --tag thesis-work --file docker/Dockerfile --target development .
 
 # Production build (145 MB)
-docker build --tag python-template --file docker/Dockerfile --target production .
+docker build --tag thesis-work --file docker/Dockerfile --target production .
 ```
 
 - To run command inside the container:
 
 ```bash
-docker run --rm -it python-template:latest bash
+docker run --rm -it thesis-work:latest bash
 
 # Temporary container
-docker run -it python-template:latest bash
+docker run -it thesis-work:latest bash
 ```
 
 # IDE Setings

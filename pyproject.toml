@@ -116,6 +116,7 @@ extra-exclude = '''
 /(
     \.git
   | _build
+  | bert-loves-chemistry
 )/
 '''
 

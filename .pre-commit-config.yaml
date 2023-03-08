@@ -25,7 +25,7 @@ repos:
         args: ["--remove"]
         description: Removes the encoding-pragma since python3 codes are utf-8 by default
       - id: check-added-large-files
-        args: ["--maxkb=1000"]
+        args: ["--maxkb=5000"]
 
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.9.0

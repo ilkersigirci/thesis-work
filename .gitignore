@@ -270,3 +270,11 @@ public
 
 # Scalene related
 profile.*
+
+# Training in the notebook
+data
+cache_dir
+outputs
+results
+runs
+wandb

@@ -1,3 +1,5 @@
+# from __future__ import annotations
+
 from pathlib import Path
 from typing import List, Tuple
 
@@ -47,7 +49,7 @@ def load_data_splits(
     return train_df, valid_df, test_df
 
 
-def get_model(model_type: str = "DeepChem/ChemBERTa-77M-MLM"):
+def get_model(model_type: str = "DeepChem/ChemBERTa-77M-MLM") -> ClassificationModel:
     model_args = ClassificationArgs(
         evaluate_each_epoch=True,
         evaluate_during_training_verbose=True,
@@ -80,14 +82,12 @@ def get_model(model_type: str = "DeepChem/ChemBERTa-77M-MLM"):
     #     os.makedirs(output_dir)
 
     # You can set class weights by using the optional weight argument
-    model = ClassificationModel(
+    return ClassificationModel(
         "roberta",
         model_type,
         args=model_args,
         # use_cuda=False,
     )
-
-    return model
 
 
 def train_model(model, train_df, valid_df, output_dir: str) -> None:

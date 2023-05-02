@@ -84,6 +84,7 @@ black = {version = "23.1.0", extras = ["d", "jupyter"]}
 mypy = "^1.0.0"
 scalene = "^1.5.19"
 dagit = "*"
+python-dotenv = "^1.0.0"
 
 [tool.pytest.ini_options]
 minversion = "6.0"

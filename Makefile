@@ -235,3 +235,6 @@ dagster-development:  ## Run dagster development env with environment variables
 
 docker: ## Build docker image
 	docker build --tag ${DOCKER_IMAGE} --file docker/Dockerfile --target ${DOCKER_TARGET} .
+
+run-file: ## Run python file with python with exported env variables
+	${PYTHON} ${FILE_PATH}

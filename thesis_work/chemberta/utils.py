@@ -98,15 +98,16 @@ def train_model(model, train_df, valid_df, output_dir: str) -> None:
     # output_dir = "SmilesTokenizer_PubChem_10M_ClinTox_run"
     # output_dir = f"{protein_type.upper()}_77M_MLM_Scaffold"
 
-    result_output_dir = (OUTPUT_PATH / "results" / output_dir).resolve()
-    wandb_output_dir = (OUTPUT_PATH / output_dir).resolve()
+    # FIXME: Wandb output path is NOT correct
+    result_output_dir = OUTPUT_PATH / "results" / output_dir
+    result_output_dir = str(result_output_dir)
 
     # Train the model
     model.train_model(
         train_df,
         eval_df=valid_df,
         output_dir=result_output_dir,
-        args={"wandb_project": wandb_output_dir},
+        args={"wandb_project": output_dir},
     )
 
 

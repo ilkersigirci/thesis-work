@@ -3,13 +3,14 @@ import warnings
 
 from dagster import Definitions, EnvVar, ExperimentalWarning
 
+from .jobs.finetune import finetune_job
 from .resources.wandb import WandbResource
 
 warnings.filterwarnings("ignore", category=ExperimentalWarning)
 
 from .assets import chemberta_assets
 
-JOBS = []
+JOBS = [finetune_job]
 SCHEDULES = []
 SENSORS = []
 

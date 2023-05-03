@@ -1,5 +1,7 @@
 # FIXME: Not working in dagster: https://github.com/dagster-io/dagster/issues/8540
 # from __future__ import annotations
+
+import pandas as pd
 from dagster import (
     Config,
     EnvVar,
@@ -13,7 +15,11 @@ from pydantic import Field
 from simpletransformers.classification import ClassificationModel
 
 from dagster_pipelines.resources.wandb import WandbResource
-from thesis_work.chemberta.utils import get_model, train_model
+from thesis_work.chemberta.utils import (
+    evaluate_model as evaluate_model_util,
+    get_model,
+    train_model as train_model_util,
+)
 
 
 class MyModelConfig(Config):
@@ -25,7 +31,7 @@ class MyModelConfig(Config):
 
 
 @asset
-def initialized_model(
+def initialize_model(
     context: OpExecutionContext, config: MyModelConfig, wandb_resource: WandbResource
 ) -> ClassificationModel:
     wandb_resource.login()
@@ -37,12 +43,12 @@ def initialized_model(
 
 
 @asset
-def trained_model(
+def train_model(
     context: OpExecutionContext,
     config: MyModelConfig,
-    initialized_model,
-    train_df_asset,
-    valid_df_asset,
+    initialize_model: ClassificationModel,
+    train_df_asset: pd.DataFrame,
+    valid_df_asset: pd.DataFrame,
 ) -> ClassificationModel:
     protein_type = config.protein_type
     model_type = config.model_type.replace("/", "_")
@@ -52,14 +58,22 @@ def trained_model(
     context.log.info("Training model ...")
     context.log.debug(f"Output directory: {output_dir}")
 
-    train_model(
-        model=initialized_model,
+    train_model_util(
+        model=initialize_model,
         train_df=train_df_asset,
         valid_df=valid_df_asset,
         output_dir=output_dir,
     )
 
-    return initialized_model
+    return initialize_model
+
+
+@asset
+def evaluate_model(
+    train_model: ClassificationModel,
+    test_df_asset: pd.DataFrame,
+) -> None:
+    evaluate_model_util(model=train_model, test_df=test_df_asset)
 
 
 if __name__ == "__main__":
@@ -68,12 +82,12 @@ if __name__ == "__main__":
     my_config = MyModelConfig(model_type="DeepChem/ChemBERTa-77M-MLM")
 
     result = materialize_to_memory(
-        assets=[initialized_model],
+        assets=[initialize_model],
         run_config=RunConfig(
             ops={
-                "initialized_model": my_config,
+                "initialize_model": my_config,
             },
         ),
         resources={"wandb_resource": WandbResource(apikey=EnvVar("WANDB_API_KEY"))},
     )
-    print(result.output_for_node("initialized_model"))  # noqa: T201
+    print(result.output_for_node("initialize_model"))  # noqa: T201

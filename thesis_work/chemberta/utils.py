@@ -12,7 +12,7 @@ from sklearn.metrics import accuracy_score, average_precision_score
 from thesis_work.chemberta.molnet_dataloader import load_molnet_dataset
 
 DATA_PATH = Path(__file__).parent.parent / "data"
-OUTPUT_PATH = Path(__file__).parent.parent
+OUTPUT_PATH = Path(__file__).parent.parent.parent
 
 
 def load_data_splits(
@@ -90,7 +90,12 @@ def get_model(model_type: str = "DeepChem/ChemBERTa-77M-MLM") -> ClassificationM
     )
 
 
-def train_model(model, train_df, valid_df, output_dir: str) -> None:
+def train_model(
+    model: ClassificationModel,
+    train_df: pd.DataFrame,
+    valid_df: pd.DataFrame,
+    output_dir: str,
+) -> None:
     # Create directory to store model weights (change path accordingly to where you want!)
     # !mkdir BPE_PubChem_10M_ClinTox_run
 
@@ -99,11 +104,11 @@ def train_model(model, train_df, valid_df, output_dir: str) -> None:
     # output_dir = f"{protein_type.upper()}_77M_MLM_Scaffold"
 
     # FIXME: Wandb output path is NOT correct
-    result_output_dir = OUTPUT_PATH / "results" / output_dir
+    result_output_dir = OUTPUT_PATH / "results" / "experiments" / output_dir
     result_output_dir = str(result_output_dir)
 
     # Train the model
-    model.train_model(
+    global_step, training_details = model.train_model(
         train_df,
         eval_df=valid_df,
         output_dir=result_output_dir,

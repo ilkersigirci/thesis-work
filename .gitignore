@@ -271,7 +271,7 @@ public
 # Scalene related
 profile.*
 
-# Training in the notebook
+# Training results
 data
 cache_dir
 outputs

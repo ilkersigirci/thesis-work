@@ -25,14 +25,17 @@ if __name__ == "__main__":
 
     protein_type = "kinase"
     model_type = "DeepChem/ChemBERTa-77M-MLM"
+    fixed_cv = True
 
     result = finetune_job.execute_in_process(
         run_config=RunConfig(
             {
-                "data_asset": DataConfig(protein_type=protein_type),
-                "initialize_model": MyModelConfig(model_type=model_type),
+                "data_asset": DataConfig(protein_type=protein_type, fixed_cv=fixed_cv),
+                "initialize_model": MyModelConfig(
+                    model_type=model_type, fixed_cv=fixed_cv
+                ),
                 "train_model": MyModelConfig(
-                    model_type=model_type, protein_type=protein_type
+                    model_type=model_type, protein_type=protein_type, fixed_cv=fixed_cv
                 ),
             }
         ),

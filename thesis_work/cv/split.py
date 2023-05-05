@@ -1,3 +1,4 @@
+"""train_test_5_fold"""
 import os
 import random
 
@@ -40,5 +41,32 @@ def apply_all(family: str, compound_count: int) -> None:
     )
 
 
+def get_kfold_experiment_indices(length: int):
+    fold_count = 6
+    all_folds = create_folds(length=length)
+
+    all_train_fold_list = all_folds[: fold_count - 1]
+    test_fold_list = all_folds[fold_count - 1]
+
+    experiment_indices = []
+
+    for i in range(fold_count - 1):
+        test_df = test_fold_list
+
+        valid_df = all_train_fold_list[i]
+
+        # Remove i from the list and flatten the list
+        train_df = [
+            item
+            for sublist in all_train_fold_list[:i] + all_train_fold_list[i + 1 :]
+            for item in sublist
+        ]
+
+        experiment_indices.append((train_df, valid_df, test_df))
+
+    return experiment_indices
+
+
 if __name__ == "__main__":
-    apply_all(family="kinase", compound_count=66310)
+    # apply_all(family="kinase", compound_count=66310)
+    apply_all(family="kinase", compound_count=50)

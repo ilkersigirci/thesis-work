@@ -1,6 +1,10 @@
 # FIXME: Not working in dagster: https://github.com/dagster-io/dagster/issues/8540
 # from __future__ import annotations
 
+
+from copy import deepcopy
+from typing import Optional
+
 import pandas as pd
 from dagster import (
     Config,
@@ -13,6 +17,8 @@ from dagster import (
 from dotenv import load_dotenv
 from pydantic import Field
 from simpletransformers.classification import ClassificationModel
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import KFold
 
 from dagster_pipelines.resources.wandb import WandbResource
 from thesis_work.chemberta.utils import (
@@ -28,6 +34,7 @@ class MyModelConfig(Config):
     )
     # TODO: Coupling with DataConfig, remove later.
     protein_type: str = Field(default="kinase", description="Type of the protein")
+    fixed_cv: bool = Field(default=False, description="Whether to use fixed CV")
 
 
 @asset
@@ -48,22 +55,59 @@ def train_model(
     config: MyModelConfig,
     initialize_model: ClassificationModel,
     train_df_asset: pd.DataFrame,
-    valid_df_asset: pd.DataFrame,
+    valid_df_asset: Optional[pd.DataFrame] = None,
 ) -> ClassificationModel:
+    # TODO: Make output dir configurable
+
     protein_type = config.protein_type
     model_type = config.model_type.replace("/", "_")
-    output_dir = f"{protein_type.upper()}_{model_type}"
+    output_dir = f"{protein_type.upper()}_{model_type}_CV"
+    # output_dir = f"{protein_type.upper()}_{model_type}"
     # output_dir = f"{protein_type.upper()}_77M_MLM_Shuffle_80_10_10_epoch10"
 
-    context.log.info("Training model ...")
-    context.log.debug(f"Output directory: {output_dir}")
+    if valid_df_asset is None and config.fixed_cv is True:
+        context.log.info("Training model with cv...")
+        context.log.info(f"Output directory: {output_dir}")
 
-    train_model_util(
-        model=initialize_model,
-        train_df=train_df_asset,
-        valid_df=valid_df_asset,
-        output_dir=output_dir,
-    )
+        kfold = KFold(n_splits=5, shuffle=False)
+        model = initialize_model
+        results = []
+
+        # TODO: Reinitialize model for each fold
+        # TODO: average_precision_score can be added to eval
+        for i, (train_index, val_index) in enumerate(kfold.split(train_df_asset)):
+            context.log.info(f"Fold: {i+1}")
+
+            model = deepcopy(initialize_model)
+            train_df_fold = train_df_asset.iloc[train_index]
+            valid_df_fold = train_df_asset.iloc[val_index]
+            train_model_util(
+                model=model,
+                train_df=train_df_fold,
+                valid_df=valid_df_fold,
+                output_dir=output_dir,
+            )
+
+            result, model_outputs, wrong_predictions = model.eval_model(
+                valid_df_fold, acc=accuracy_score
+            )
+            context.log.info(f"Accuracy: {result['acc']}")
+            results.append(result["acc"])
+
+        context.log.info(f"Mean-Precision Accuracy: {sum(results) / len(results)}")
+
+        initialize_model = model
+
+    else:
+        context.log.info("Training model without cv...")
+        context.log.info(f"Output directory: {output_dir}")
+
+        train_model_util(
+            model=initialize_model,
+            train_df=train_df_asset,
+            valid_df=valid_df_asset,
+            output_dir=output_dir,
+        )
 
     return initialize_model
 

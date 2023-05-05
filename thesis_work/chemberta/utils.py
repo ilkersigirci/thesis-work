@@ -1,7 +1,7 @@
 # from __future__ import annotations
 
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -10,18 +10,21 @@ from sklearn.metrics import accuracy_score, average_precision_score
 
 # from thesis_work.chemberta.molnet_dataloader import write_molnet_dataset_for_chemprop
 from thesis_work.chemberta.molnet_dataloader import load_molnet_dataset
+from thesis_work.cv.split import create_folds
 
 DATA_PATH = Path(__file__).parent.parent / "data"
 OUTPUT_PATH = Path(__file__).parent.parent.parent
 
 
 def load_data_splits(
-    protein_type: str = "kinase",
-) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    protein_type: str = "kinase", fixed_cv: bool = False
+) -> Tuple[pd.DataFrame, Optional[pd.DataFrame], pd.DataFrame]:
     """Loads data and generates folds.
 
     Args:
         protein_type: Type of the protein.
+        fixed_cv: Whether to use fixed CV. If True, then the last fold is used as
+         test set and no validation set is used.
 
     Returns:
         train, validation and test data.
@@ -38,13 +41,24 @@ def load_data_splits(
         df = pd.read_csv(data_path)
         df.columns = ["text", "labels"]
 
-        df = df.sample(frac=1, random_state=42)
+        if fixed_cv is True:
+            len_data = len(df)
+            fold_list = create_folds(length=len_data)
+            train_indices = [item for sublist in fold_list[:5] for item in sublist]
+            test_indices = fold_list[5]
 
-        train_df, valid_df, test_df = np.split(
-            # df.sample(frac=1), [int(0.6 * len(df)), int(0.8 * len(df))]
-            df.sample(frac=1),
-            [int(0.8 * len(df)), int(0.9 * len(df))],
-        )
+            train_df = df.iloc[train_indices]
+            valid_df = None
+            test_df = df.iloc[test_indices]
+
+        else:
+            df = df.sample(frac=1, random_state=42)
+
+            train_df, valid_df, test_df = np.split(
+                # df.sample(frac=1), [int(0.6 * len(df)), int(0.8 * len(df))]
+                df.sample(frac=1),
+                [int(0.8 * len(df)), int(0.9 * len(df))],
+            )
 
     return train_df, valid_df, test_df
 
@@ -93,11 +107,14 @@ def get_model(model_type: str = "DeepChem/ChemBERTa-77M-MLM") -> ClassificationM
 def train_model(
     model: ClassificationModel,
     train_df: pd.DataFrame,
-    valid_df: pd.DataFrame,
-    output_dir: str,
+    valid_df: Optional[pd.DataFrame] = None,
+    output_dir: Optional[str] = None,
 ) -> None:
     # Create directory to store model weights (change path accordingly to where you want!)
     # !mkdir BPE_PubChem_10M_ClinTox_run
+
+    if output_dir is None:
+        output_dir = "Untitled_Run"
 
     # output_dir = "BPE_PubChem_10M_ClinTox_run"
     # output_dir = "SmilesTokenizer_PubChem_10M_ClinTox_run"
@@ -116,7 +133,7 @@ def train_model(
     )
 
 
-def evaluate_model(model, test_df) -> None:
+def evaluate_model(model: ClassificationModel, test_df: pd.DataFrame) -> None:
     # FIXME: Takes to much time, 17 min for 6k samples
 
     # accuracy
@@ -130,7 +147,7 @@ def evaluate_model(model, test_df) -> None:
     )
 
 
-def predict_model(model, smiles_mol_list: List[str]):
+def predict_model(model: ClassificationModel, smiles_mol_list: List[str]):
     predictions, raw_outputs = model.predict(smiles_mol_list)
 
     return predictions, raw_outputs

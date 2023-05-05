@@ -1,7 +1,14 @@
-from typing import Tuple
+from typing import Optional, Tuple
 
 import pandas as pd
-from dagster import AssetOut, Config, RunConfig, materialize_to_memory, multi_asset
+from dagster import (
+    AssetOut,
+    Config,
+    OpExecutionContext,
+    RunConfig,
+    materialize_to_memory,
+    multi_asset,
+)
 from pydantic import Field
 
 from thesis_work.chemberta.utils import load_data_splits
@@ -9,6 +16,7 @@ from thesis_work.chemberta.utils import load_data_splits
 
 class DataConfig(Config):
     protein_type: str = Field(default="kinase", description="Type of the protein")
+    fixed_cv: bool = Field(default=False, description="Whether to use fixed CV")
 
 
 @multi_asset(
@@ -18,14 +26,27 @@ class DataConfig(Config):
         "test_df_asset": AssetOut(),
     }
 )
-def data_asset(config: DataConfig) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    train_df, valid_df, test_df = load_data_splits(protein_type=config.protein_type)
+def data_asset(
+    context: OpExecutionContext,
+    config: DataConfig,
+) -> Tuple[pd.DataFrame, Optional[pd.DataFrame], pd.DataFrame]:
+    train_df, valid_df, test_df = load_data_splits(
+        protein_type=config.protein_type, fixed_cv=config.fixed_cv
+    )
+
+    assert config.fixed_cv and valid_df is None
+
+    log_info = f"train_df.shape: {train_df.shape} test_df.shape: {test_df.shape} "
+    if valid_df is not None:
+        log_info = log_info + f"valid_df.shape: {valid_df.shape}"
+
+    context.log.info(log_info)
 
     return train_df, valid_df, test_df
 
 
 if __name__ == "__main__":
-    my_config = DataConfig(protein_type="kinase")
+    my_config = DataConfig(protein_type="kinase", fixed_cv=True)
 
     result = materialize_to_memory(
         assets=[data_asset],
@@ -39,5 +60,3 @@ if __name__ == "__main__":
     train_df = result.output_for_node("data_asset", output_name="train_df_asset")
     valid_df = result.output_for_node("data_asset", output_name="valid_df_asset")
     test_df = result.output_for_node("data_asset", output_name="test_df_asset")
-
-    print(train_df.shape, valid_df.shape, test_df.shape)  # noqa: T201

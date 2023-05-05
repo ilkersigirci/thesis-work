@@ -15,7 +15,7 @@ from thesis_work.chemberta.utils import load_data_splits
 
 
 class DataConfig(Config):
-    protein_type: str = Field(default="kinase", description="Type of the protein")
+    protein_type: str = Field(default=..., description="Type of the protein")
     fixed_cv: bool = Field(default=False, description="Whether to use fixed CV")
 
 

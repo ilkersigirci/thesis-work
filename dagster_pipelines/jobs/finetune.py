@@ -1,3 +1,27 @@
+"""
+- Run script in the background with ssh connection:
+nohup python3 -u <script> </dev/null >/dev/null 2>&1 &
+
+nohup /home/ilker/Documents/MyRepos/thesis-work/.venv/bin/python -u /home/ilker/Documents/MyRepos/thesis-work/dagster_pipelines/jobs/finetune.py </dev/null >/dev/null 2>&1 &
+
+- Dagster Config
+ops:
+  data_asset:
+    config:
+      protein_type: gpcr
+      fixed_cv: true
+  initialize_model:
+    config:
+      protein_type: gpcr
+      model_type: DeepChem/ChemBERTa-77M-MLM
+      fixed_cv: true
+  train_model:
+    config:
+      protein_type: gpcr
+      model_type: DeepChem/ChemBERTa-77M-MLM
+      fixed_cv: true
+
+"""
 import pandas as pd
 from dagster import EnvVar, RunConfig, job
 from dotenv import load_dotenv
@@ -12,6 +36,7 @@ from dagster_pipelines.assets.chemberta.model import (
 from dagster_pipelines.resources.wandb import WandbResource
 
 
+# FIXME: Evaluate model doesn't run. Hence, pipeline never finishes.
 @job
 def finetune_job() -> None:
     train_df, valid_df, test_df = data_asset()
@@ -23,7 +48,10 @@ def finetune_job() -> None:
 if __name__ == "__main__":
     load_dotenv()
 
-    protein_type = "kinase"
+    # protein_type = "kinase"
+    protein_type = "protease"
+    protein_type = "gpcr"
+
     model_type = "DeepChem/ChemBERTa-77M-MLM"
     fixed_cv = True
 

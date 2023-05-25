@@ -3,7 +3,7 @@
 
 
 from copy import deepcopy
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import pandas as pd
 import wandb
@@ -62,7 +62,8 @@ def train_model(
 
     protein_type = config.protein_type
     model_type = config.model_type.replace("/", "_")
-    output_dir = f"{model_type[-7:]}_{protein_type.upper()}_CV"
+    # output_dir = f"{model_type[-7:]}_{protein_type.upper()}_CV_20Epochs"
+    output_dir = f"{model_type[-7:]}_{protein_type.upper()}_10Epochs"
     # output_dir = f"{protein_type.upper()}_{model_type}"
     # output_dir = f"{protein_type.upper()}_77M_MLM_Shuffle_80_10_10_epoch10"
 
@@ -96,12 +97,12 @@ def train_model(
             fold_accuracy = result["acc"]
             results.append(fold_accuracy)
 
-            wandb.log({"accuracy": fold_accuracy, "fold": i + 1})
+            wandb.log({"fold_accuracy": fold_accuracy})
             context.log.info(f"Accuracy: {fold_accuracy}")
 
         mean_accuracy = sum(results) / len(results)
 
-        wandb.log({"mean_accuracy": mean_accuracy})
+        wandb.log({"fold_mean_accuracy": mean_accuracy})
         context.log.info(f"Mean Precision Accuracy: {mean_accuracy}")
 
         initialize_model = model
@@ -125,9 +126,21 @@ def evaluate_model(
     context: OpExecutionContext,
     train_model: ClassificationModel,
     test_df_asset: pd.DataFrame,
-) -> None:
+) -> Dict[str, Any]:
     context.log.info("Evaluating model...")
-    evaluate_model_util(model=train_model, test_df=test_df_asset)
+    result_acc, result_avs = evaluate_model_util(
+        model=train_model, test_df=test_df_asset
+    )
+
+    return result_acc
+
+
+@asset
+def show_eval_result(
+    context: OpExecutionContext, evaluate_model: Dict[str, Any]
+) -> None:
+    context.log.info(f"Accuracy: {evaluate_model['acc']}")
+    # context.log.info(f"Average Precision Score: {evaluate_model['aps']}")
 
 
 if __name__ == "__main__":

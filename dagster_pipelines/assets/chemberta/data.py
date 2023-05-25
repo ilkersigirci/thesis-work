@@ -34,7 +34,8 @@ def data_asset(
         protein_type=config.protein_type, fixed_cv=config.fixed_cv
     )
 
-    assert config.fixed_cv and valid_df is None
+    if config.fixed_cv is True:
+        assert valid_df is None
 
     log_info = f"train_df.shape: {train_df.shape} test_df.shape: {test_df.shape} "
     if valid_df is not None:

@@ -31,6 +31,7 @@ from dagster_pipelines.assets.chemberta.model import (
     MyModelConfig,
     evaluate_model,
     initialize_model,
+    show_eval_result,
     train_model,
 )
 from dagster_pipelines.resources.wandb import WandbResource
@@ -42,15 +43,16 @@ def finetune_job() -> None:
     train_df, valid_df, test_df = data_asset()
     initialized_model = initialize_model()
     trained_model = train_model(initialized_model, train_df, valid_df)
-    evaluate_model(trained_model, test_df)
+    eval_results = evaluate_model(trained_model, test_df)
+    show_eval_result(eval_results)
 
 
 if __name__ == "__main__":
     load_dotenv()
 
-    # protein_type = "kinase"
-    protein_type = "protease"
-    protein_type = "gpcr"
+    protein_type = "kinase"
+    # protein_type = "protease"
+    # protein_type = "gpcr"
 
     model_type = "DeepChem/ChemBERTa-77M-MLM"
     fixed_cv = True
@@ -60,7 +62,7 @@ if __name__ == "__main__":
             {
                 "data_asset": DataConfig(protein_type=protein_type, fixed_cv=fixed_cv),
                 "initialize_model": MyModelConfig(
-                    model_type=model_type, fixed_cv=fixed_cv
+                    model_type=model_type, fixed_cv=fixed_cv, protein_type=protein_type
                 ),
                 "train_model": MyModelConfig(
                     model_type=model_type, protein_type=protein_type, fixed_cv=fixed_cv

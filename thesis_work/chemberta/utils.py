@@ -1,10 +1,11 @@
 # from __future__ import annotations
 
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
+import wandb
 from simpletransformers.classification import ClassificationArgs, ClassificationModel
 from sklearn.metrics import accuracy_score, average_precision_score
 
@@ -133,18 +134,39 @@ def train_model(
     )
 
 
-def evaluate_model(model: ClassificationModel, test_df: pd.DataFrame) -> None:
+def evaluate_model(
+    model: ClassificationModel, test_df: pd.DataFrame
+) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     # FIXME: Takes to much time, 17 min for 6k samples
+    # TODO: Run eval on the same model for multiple times to see if the results are consistent
 
     # accuracy
-    result, model_outputs, wrong_predictions = model.eval_model(
+    result_acc, model_outputs_acc, wrong_predictions_acc = model.eval_model(
         test_df, acc=accuracy_score
     )
 
     # ROC-PRC
-    result, model_outputs, wrong_predictions = model.eval_model(
+    result_avs, model_outputs_avs, wrong_predictions_avs = model.eval_model(
         test_df, acc=average_precision_score
     )
+
+    result_acc_wandb = {f"ACC_{key}": value for key, value in result_acc.items()}
+    result_avs_wandb = {f"AVS_{key}": value for key, value in result_avs.items()}
+    resul_all_wandb = {**result_acc_wandb, **result_avs_wandb}
+
+    wandb.log(resul_all_wandb)
+
+    # mcc = result_avs["mcc"]
+    # tp = result_avs["tp"]
+    # tn = result_avs["tn"]
+    # fp = result_avs["fp"]
+    # fn = result_avs["fn"]
+    # auroc = result_avs["auroc"]
+    # auprc = result_avs["auprc"]
+    # acc = result_acc["acc"]
+    # eval_loss = result_acc["eval_loss"]
+
+    return result_acc, result_avs
 
 
 def predict_model(model: ClassificationModel, smiles_mol_list: List[str]):

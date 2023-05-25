@@ -213,7 +213,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-# .env
+.env
 .venv
 env/
 venv/
@@ -271,7 +271,7 @@ public
 # Scalene related
 profile.*
 
-# Training in the notebook
+# Training results
 data
 cache_dir
 outputs

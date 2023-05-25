@@ -13,6 +13,8 @@ TEST_OUTPUT_DIR=tests_outputs
 PRECOMMIT_FILE_PATHS=./thesis_work/__init__.py
 PROFILE_FILE_PATH=./thesis_work/__init__.py
 PYPI_URLS=
+DOCKER_IMAGE=thesis-work
+DOCKER_TARGET=development
 
 .PHONY: help install test clean build publish doc pre-commit format lint profile
 .DEFAULT_GOAL=help
@@ -22,12 +24,22 @@ help:
 		 awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m\
 		 %s\n", $$1, $$2}'
 
+# If .env file exists, include it and export its variables
+ifeq ($(shell test -f .env && echo 1),1)
+    include .env
+	export
+endif
+
+python-info: ## List information about the python environment
+	@which ${PYTHON}
+	@${PYTHON} --version
+
 update-pip:
 	${PYTHON} -m pip install -U pip
 
 install-poetry: ## Install poetry if it is not already installed (Installing poetry with official method is recommended)
 	$(MAKE) update-pip
-	! command -v poetry &> /dev/null && pip install poetry==1.3.2
+	! command -v poetry &> /dev/null && pip install poetry==1.4.2
 	# poetry config virtualenvs.create false
 	# poetry config repositories.private-pypi <PRIVATE_PYPI_URL>
 	# poetry config http-basic.private-pypi ${PYPI_USERNAME} ${PYPI_PASSWORD}
@@ -75,7 +87,7 @@ install-precommit: ## Install pre-commit hooks
 	pre-commit install
 
 install-lint:
-	pip install black[d]==23.1.0 ruff==0.0.252
+	pip install black[d]==23.1.0 ruff==0.0.260
 
 install-build:
 	############# PIP ############
@@ -217,3 +229,12 @@ profile-gui: ## Profile the file with scalene and shows the report in the browse
 
 profile-builtin: ## Profile the file with cProfile and shows the report in the terminal
 	${PYTHON} -m cProfile -s tottime ${PROFILE_FILE_PATH}
+
+dagster-development:  ## Run dagster development env with environment variables
+	dagster dev -p 3005
+
+docker: ## Build docker image
+	docker build --tag ${DOCKER_IMAGE} --file docker/Dockerfile --target ${DOCKER_TARGET} .
+
+run-file: ## Run python file with python with exported env variables
+	${PYTHON} ${FILE_PATH}

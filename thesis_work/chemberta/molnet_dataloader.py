@@ -1,3 +1,5 @@
+# ruff: noqa
+
 """Copy of bert-loves-chemistry/chemberta/utils/molnet_dataloader.py.
 
 Automatically generates scaffold splits on any MoleculeNet dataset.
@@ -130,9 +132,7 @@ def load_molnet_dataset(
     # Default to all available tasks
     if tasks_wanted is None:
         tasks_wanted = MOLNET_DIRECTORY[name].get("tasks_wanted", tasks)
-    print(  # noqa: T201
-        f"Using tasks {tasks_wanted} from available tasks for {name}: {tasks}"
-    )
+    print(f"Using tasks {tasks_wanted} from available tasks for {name}: {tasks}")
     return (
         tasks_wanted,
         [

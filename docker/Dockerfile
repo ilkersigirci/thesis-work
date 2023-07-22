@@ -4,7 +4,7 @@
 ARG APP_NAME=thesis_work
 ARG APP_PATH=/opt/$APP_NAME
 ARG PYTHON_VERSION=3.10-slim-bullseye
-ARG POETRY_VERSION=1.4.2
+ARG POETRY_VERSION=1.5.1
 
 #
 # Stage: staging

@@ -62,6 +62,7 @@ bertviz = "^1.4.0"
 # apex = {git = "https://github.com/NVIDIA/apex.git", branch = "master"}
 numpy = "1.21.6" # NOTE: Only needed for `chemberta.load_molnet_dataset`
 dagster = "1.4.2"
+torch = "^1.13.1" # NOTE: Fix for `ValueError: libcublas.so.*[0-9] not found in the system path`
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.1.2"

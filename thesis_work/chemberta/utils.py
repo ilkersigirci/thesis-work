@@ -1,13 +1,15 @@
 # from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
+import torch
 import wandb
 from simpletransformers.classification import ClassificationArgs, ClassificationModel
 from sklearn.metrics import accuracy_score, average_precision_score
+from transformers import RobertaModel, RobertaTokenizer, RobertaTokenizerFast
 
 # from thesis_work.chemberta.molnet_dataloader import write_molnet_dataset_for_chemprop
 from thesis_work.chemberta.molnet_dataloader import load_molnet_dataset
@@ -62,6 +64,72 @@ def load_data_splits(
             )
 
     return train_df, valid_df, test_df
+
+
+def get_model_vector_embedding(
+    model: RobertaModel,
+    tokenizer: Union[RobertaTokenizer, RobertaTokenizerFast],
+    smile_str: str,
+) -> np.ndarray:
+    """
+    NOTE:
+        - This is the only working method that doesn't consume all the memory.
+        The important path is that, we tokenize the SMILES strings one by one within tokenizer.
+        Declaring tokenizer with all inputs results in memory error.
+
+        - Vector size: [65, 384]
+            65: Token length
+            384: Embedding size
+
+    """
+
+    # NOTE: Not working code
+    # token = tokenizer(smile_strings, return_tensors='pt', padding=True, truncation=True)
+
+    # torch.set_num_threads(1)
+    token = torch.tensor(
+        [
+            tokenizer.encode(
+                smile_str,
+                add_special_tokens=True,
+                max_length=512,  # NOTE: Can be 384
+                padding=True,
+                truncation=True,
+            )
+        ]
+    )
+    with torch.no_grad():
+        output = model(token)
+
+        # TODO: Should we need this?
+        # output = output[0][:, 0, :]  # Take the [CLS] token's embedding for each sentence
+
+    # NOTE: Same with output[0]
+    last_layer = output.last_hidden_state
+
+    # return torch.mean(sequence_out[0], dim=0).tolist()
+    return torch.mean(last_layer[0], dim=0).detach().numpy()
+
+
+def add_vector_embedding_to_df(df: pd.DataFrame, model_name: str) -> pd.DataFrame:
+    """Adds vector embedding to the dataframe."""
+
+    if "smiles" not in df.columns:
+        raise ValueError("df must contain a column named smiles")
+
+    model_name = "DeepChem/ChemBERTa-77M-MLM"
+
+    # tokenizer = RobertaTokenizerFast.from_pretrained('seyonec/PubChem10M_SMILES_BPE_450k')
+    # model = RobertaModel.from_pretrained('seyonec/ChemBERTa-77M-MLM', output_hidden_states = True)
+    tokenizer = RobertaTokenizerFast.from_pretrained(model_name)
+    model = RobertaModel.from_pretrained(model_name, output_hidden_states=True)
+    model.eval()
+
+    df["vector"] = df["smiles"].apply(
+        lambda x: get_model_vector_embedding(model, tokenizer, x).tolist()
+    )
+
+    return df
 
 
 def get_model(model_type: str = "DeepChem/ChemBERTa-77M-MLM") -> ClassificationModel:

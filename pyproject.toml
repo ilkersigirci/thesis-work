@@ -51,8 +51,9 @@ placeholder = "thesis_work.scripts.placeholder:placeholder_script"
 python = "3.10.*"
 deepchem = "^2.7.1"
 streamlit= "^1.19.0"
-py3dmol = "^2.0.1.post1"
+py3dmol = "2.0.0.post2"
 stmol = "^0.0.9"
+ipython-genutils = "^0.2.0" # NOTE: For stmol
 matplotlib = "^3.7.1"
 regex = "^2022.10.31"
 transformers = "4.30.2" # NOTE: Fix for `No module named 'transformers.models.mmbt'`
@@ -63,6 +64,7 @@ bertviz = "^1.4.0"
 numpy = "1.21.6" # NOTE: Only needed for `chemberta.load_molnet_dataset`
 dagster = "1.4.2"
 torch = "^1.13.1" # NOTE: Fix for `ValueError: libcublas.so.*[0-9] not found in the system path`
+seaborn = "^0.12.2"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.1.2"

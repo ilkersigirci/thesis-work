@@ -65,6 +65,10 @@ def load_data_splits(
 
 
 def get_model(model_type: str = "DeepChem/ChemBERTa-77M-MLM") -> ClassificationModel:
+    """
+    TODO:
+        - `model_type` parameter is actually `model_name`. Change it!
+    """
     model_args = ClassificationArgs(
         evaluate_each_epoch=True,
         evaluate_during_training_verbose=True,
@@ -98,8 +102,8 @@ def get_model(model_type: str = "DeepChem/ChemBERTa-77M-MLM") -> ClassificationM
 
     # You can set class weights by using the optional weight argument
     return ClassificationModel(
-        "roberta",
-        model_type,
+        model_type="roberta",
+        model_name=model_type,
         args=model_args,
         # use_cuda=False,
     )

@@ -7,6 +7,12 @@ from rdkit import Chem
 from rdkit.Chem import AllChem, Draw
 from stmol import showmol
 
+from thesis_work.chemberta.model_descriptors import (
+    get_model_descriptor,
+    initialize_model_tokenizer,
+)
+from thesis_work.utils import get_ecfp_descriptor, is_valid_smiles
+
 
 def create_static_visualization(
     compound_smiles: str = "c1cc(C(=O)O)c(OC(=O)C)cc1",
@@ -30,14 +36,14 @@ def makeblock(smi: str):
     return mblock
 
 
-def render_mol(xyz):
+def render_mol(xyz, height: int = 600, width: int = 600):
     """Render molecule from xyz string."""
-    xyzview = py3Dmol.view()  # (width=400,height=400)
+    xyzview = py3Dmol.view()  # (width=600,height=600)
     xyzview.addModel(xyz, "mol")  # pdb, sdf, xyz
     xyzview.setStyle({"stick": {}})
     xyzview.setBackgroundColor("white")
     xyzview.zoomTo()
-    showmol(xyzview, height=500, width=500)
+    showmol(xyzview, height=height, width=width)
 
 
 def create_dynamic_visualization(
@@ -48,9 +54,53 @@ def create_dynamic_visualization(
     render_mol(blk)
 
 
+def create_model_attention_visualization(
+    compound_smiles: str = "c1cc(C(=O)O)c(OC(=O)C)cc1",
+) -> None:
+    pass
+
+
 if __name__ == "__main__":
-    default_smiles = "CC"
-    default_smiles: str = "c1cc(C(=O)O)c(OC(=O)C)cc1"
-    compound_smiles = st.text_input("SMILES please", default_smiles)
-    # create_static_visualization(compound_smiles=compound_smiles)
-    create_dynamic_visualization(compound_smiles=compound_smiles)
+    default_smiles = "c1cc(C(=O)O)c(OC(=O)C)cc1"
+    compound_smiles = st.text_input("SMILES string", default_smiles)
+
+    if not is_valid_smiles(compound_smiles):
+        st.error("Invalid SMILES string")
+        st.stop()
+
+    # visualization_choice = st.radio("Visualization type", ("Static", "Dynamic"))
+    visualization_choice = st.selectbox(
+        "Visualization type", (None, "Static", "Dynamic", "Model.Attention")
+    )
+
+    if not visualization_choice:
+        st.stop()
+
+    if visualization_choice == "Static":
+        create_static_visualization(compound_smiles=compound_smiles)
+    elif visualization_choice == "Dynamic":
+        create_dynamic_visualization(compound_smiles=compound_smiles)
+    elif visualization_choice == "Model.Attention":
+        create_model_attention_visualization(compound_smiles=compound_smiles)
+
+    if visualization_choice != "Model.Attention":
+        st.stop()
+
+    descriptor_choice = st.selectbox("Descriptor type", (None, "ECFP", "ChemBERTa"))
+
+    if not descriptor_choice:
+        st.stop()
+
+    if descriptor_choice == "ECFP":
+        ecfp_descriptor = get_ecfp_descriptor(smiles_str=compound_smiles)
+        st.write(ecfp_descriptor)
+    elif descriptor_choice == "ChemBERTa":
+        model_name = "DeepChem/ChemBERTa-77M-MLM"
+
+        # TODO: Cache
+        model, tokenizer = initialize_model_tokenizer(model_name=model_name)
+
+        model_descriptor = get_model_descriptor(
+            model=model, tokenizer=tokenizer, smiles_str=compound_smiles
+        )
+        st.write(model_descriptor)

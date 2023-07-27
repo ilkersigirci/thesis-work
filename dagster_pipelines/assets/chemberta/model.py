@@ -1,4 +1,4 @@
-# FIXME: Not working in dagster: https://github.com/dagster-io/dagster/issues/8540
+# FIXME: Not working in dagster:
 # from __future__ import annotations
 
 

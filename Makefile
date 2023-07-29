@@ -16,7 +16,7 @@ PYPI_URLS=
 DOCKER_IMAGE=thesis-work
 DOCKER_TARGET=development
 
-.PHONY: help install test clean build publish doc pre-commit format lint profile
+.PHONY: help install test clean build publish doc pre-commit format lint profile gui
 .DEFAULT_GOAL=help
 
 help:
@@ -238,3 +238,6 @@ docker: ## Build docker image
 
 run-file: ## Run python file with python with exported env variables
 	${PYTHON} ${FILE_PATH}
+
+gui: ## Run GUI with streamlit
+	streamlit run thesis_work/gui/index.py

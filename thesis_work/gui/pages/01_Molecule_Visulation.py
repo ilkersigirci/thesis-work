@@ -1,4 +1,4 @@
-"""Molecule visualization using RDKit and Streamlit."""
+"""Molecule visualization with RDKit"""
 import py3Dmol
 import streamlit as st
 
@@ -61,6 +61,8 @@ def create_model_attention_visualization(
 
 
 if __name__ == "__main__":
+    st.set_page_config(page_title="Model Visualization", layout="wide")
+
     default_smiles = "c1cc(C(=O)O)c(OC(=O)C)cc1"
     compound_smiles = st.text_input("SMILES string", default_smiles)
 

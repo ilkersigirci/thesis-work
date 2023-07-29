@@ -1,0 +1,46 @@
+version: "3.9"
+
+networks:
+  thesis_work_network:
+    driver: bridge
+    name: thesis_work_network
+
+services:
+  thesis-work-development:
+    image: thesis-work-development:latest
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+      target: development
+    container_name: thesis-work-dev
+    restart: on-failure
+    networks:
+      - thesis_work_network
+    volumes:
+      - ./thesis_work:/opt/thesis_work/thesis_work
+
+  thesis-work-production:
+    image: thesis-work-production:latest
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+      target: production
+    container_name: thesis-work-prod
+    restart: "no"
+    networks:
+      - thesis_work_network
+
+  thesis-work-streamlit:
+    image: thesis-work-development:latest
+    container_name: thesis-work-streamlit
+    command:
+      - "streamlit"
+      - "run"
+      - "thesis_work/gui/index.py"
+    restart: on-failure
+    networks:
+      - thesis_work_network
+    ports:
+      - "5000:8501"
+    volumes:
+      - ./thesis_work:/opt/thesis_work/thesis_work

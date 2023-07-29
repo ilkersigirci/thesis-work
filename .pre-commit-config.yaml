@@ -33,7 +33,7 @@ repos:
       - id: python-check-mock-methods
       - id: python-no-log-warn
       # - id: python-no-eval
-      - id: python-use-type-annotations
+      # - id: python-use-type-annotations
 
   - repo: https://github.com/psf/black
     # rev: 23.1.0

@@ -83,9 +83,10 @@ def mean_pooling(model_output, attention_mask):
     """
     From https://github.com/seyonechithrananda/bert-loves-chemistry/blob/master/chemberta/visualization/ChemBERTA_dimensionaliy_reduction_BBBP.ipynb
     """
-    token_embeddings = model_output[
-        0
-    ]  # First element of model_output contains all token embeddings
+
+    # First element of model_output contains all token embeddings
+    token_embeddings = model_output[0]
+
     input_mask_expanded = (
         attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
     )

@@ -16,7 +16,7 @@ PYPI_URLS=
 DOCKER_IMAGE=thesis-work
 DOCKER_TARGET=development
 
-.PHONY: help install test clean build publish doc pre-commit format lint profile gui
+.PHONY: help install test clean build publish doc pre-commit format lint profile docker gui
 .DEFAULT_GOAL=help
 
 help:
@@ -234,7 +234,7 @@ dagster-development:  ## Run dagster development env with environment variables
 	dagster dev -p 3005
 
 docker: ## Build docker image
-	docker build --tag ${DOCKER_IMAGE} --file docker/Dockerfile --target ${DOCKER_TARGET} .
+	docker build --tag ${DOCKER_IMAGE}:${DOCKER_TARGET} --file docker/Dockerfile --target ${DOCKER_TARGET} .
 
 run-file: ## Run python file with python with exported env variables
 	${PYTHON} ${FILE_PATH}

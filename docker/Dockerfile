@@ -87,7 +87,8 @@ ENV \
 WORKDIR $APP_PATH
 COPY --from=build $APP_PATH/dist/*.whl ./
 COPY --from=build $APP_PATH/constraints.txt ./
-RUN pip install ./$APP_NAME*.whl --constraint constraints.txt
+# RUN pip install ./$APP_NAME*.whl --constraint constraints.txt
+RUN pip install ./$APP_NAME*.whl --requirement constraints.txt
 
 RUN useradd --create-home --shell /bin/bash $APP_NAME
 WORKDIR /home/$APP_NAME

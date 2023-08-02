@@ -18,5 +18,22 @@ htmlcov/
 .venv
 venv
 
-# docs/
-# tests/
+docs
+tests
+bert-loves-chemistry
+
+# Bert training files
+notebooks
+outputs
+results
+runs
+training_files
+
+data
+temp
+bert-loves-chemistry
+# outputs
+# results
+# runs
+# cache_dir
+# wandb

@@ -6,8 +6,10 @@ networks:
     name: thesis_work_network
 
 services:
+  # TODO: Volume bind training model files
   thesis-work-development:
     image: thesis-work-development:latest
+    user: "${UID}:${GID}"
     build:
       context: .
       dockerfile: ./docker/Dockerfile
@@ -18,20 +20,59 @@ services:
       - thesis_work_network
     volumes:
       - ./thesis_work:/opt/thesis_work/thesis_work
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
 
-  thesis-work-production:
-    image: thesis-work-production:latest
+  # TODO:
+  # - Volume bind training model files
+  thesis-work-dagster:
+    image: thesis-work-development:latest
+    user: "${UID}:${GID}"
     build:
       context: .
       dockerfile: ./docker/Dockerfile
-      target: production
-    container_name: thesis-work-prod
-    restart: "no"
+      target: development
+      args:
+        USER_ID: ${UID}
+        GROUP_ID: ${GID}
+    container_name: thesis-work-dagster
+    command:
+      - "dagster"
+      - "dev"
+      - "-h"
+      - "0.0.0.0"
+      - "-p"
+      - "3005"
+    restart: on-failure
     networks:
       - thesis_work_network
+    ports:
+      - "3005:3005"
+    volumes:
+      - /home/ilker/dagster_home_thesis:/home/ilker/dagster_home_thesis:rw
+      - ./dagster_pipelines:/opt/thesis_work/dagster_pipelines:rw
+      - ./thesis_work:/opt/thesis_work/thesis_work:rw
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
 
+# TODO: Volume bind training model files
   thesis-work-streamlit:
     image: thesis-work-development:latest
+    user: "${UID}:${GID}"
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+      target: development
     container_name: thesis-work-streamlit
     command:
       - "streamlit"
@@ -44,3 +85,28 @@ services:
       - "5000:8501"
     volumes:
       - ./thesis_work:/opt/thesis_work/thesis_work
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  thesis-work-production:
+    image: thesis-work-production:latest
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+      target: production
+    container_name: thesis-work-prod
+    restart: "no"
+    networks:
+      - thesis_work_network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

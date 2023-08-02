@@ -273,9 +273,10 @@ profile.*
 
 # Training results
 data
-cache_dir
-outputs
-results
-runs
-wandb
+temp
 bert-loves-chemistry
+# outputs
+# results
+# runs
+# cache_dir
+# wandb

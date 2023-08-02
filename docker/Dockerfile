@@ -1,6 +1,8 @@
 # Adapted from:
 # https://github.com/NannyML/nannyml/blob/main/Dockerfile
 
+ARG USER_ID
+ARG GROUP_ID
 ARG APP_NAME=thesis_work
 ARG APP_PATH=/opt/$APP_NAME
 ARG PYTHON_VERSION=3.10-slim-bullseye
@@ -10,6 +12,8 @@ ARG POETRY_VERSION=1.5.1
 # Stage: staging
 #
 FROM python:$PYTHON_VERSION as staging
+ARG USER_ID
+ARG GROUP_ID
 ARG APP_NAME
 ARG APP_PATH
 ARG POETRY_VERSION
@@ -23,7 +27,8 @@ ENV \
     POETRY_HOME="/opt/poetry" \
     POETRY_VIRTUALENVS_IN_PROJECT=true \
     POETRY_NO_INTERACTION=1 \
-    POETRY_INSTALLER_MAX_WORKERS=10
+    POETRY_INSTALLER_MAX_WORKERS=10 \
+    POETRY_CACHE_DIR='/tmp/pypoetry'
 
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
@@ -37,13 +42,16 @@ ENV PATH="$POETRY_HOME/bin:$PATH"
 # Import our project files
 WORKDIR $APP_PATH
 COPY ./poetry.lock ./pyproject.toml ./
-RUN poetry install --no-root
+# RUN poetry install --no-root
+RUN --mount=type=cache,target=$POETRY_CACHE_DIR poetry install --no-root
 COPY . .
 
 #
 # Stage: development
 #
 FROM staging as development
+ARG USER_ID
+ARG GROUP_ID
 ARG APP_NAME
 ARG APP_PATH
 
@@ -51,10 +59,13 @@ ENV POETRY_INSTALLER_MAX_WORKERS=10
 
 # Install project in editable mode and with development dependencies
 WORKDIR $APP_PATH
-RUN poetry install
+RUN --mount=type=cache,target=$POETRY_CACHE_DIR poetry install
+
+RUN addgroup --gid $GROUP_ID user
+RUN adduser --disabled-password --gecos '' --uid $USER_ID --gid $GROUP_ID user
+USER user
 
 ENTRYPOINT ["poetry", "run"]
-# CMD ["nml"]
 
 #
 # Stage: build

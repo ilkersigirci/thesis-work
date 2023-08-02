@@ -230,8 +230,8 @@ profile-gui: ## Profile the file with scalene and shows the report in the browse
 profile-builtin: ## Profile the file with cProfile and shows the report in the terminal
 	${PYTHON} -m cProfile -s tottime ${PROFILE_FILE_PATH}
 
-dagster-development:  ## Run dagster development env with environment variables
-	dagster dev -p 3005
+dagster-dev:  ## Run dagster development env with environment variables
+	dagster dev -p 3006
 
 docker: ## Build docker image
 	docker build --tag ${DOCKER_IMAGE}:${DOCKER_TARGET} --file docker/Dockerfile --target ${DOCKER_TARGET} .

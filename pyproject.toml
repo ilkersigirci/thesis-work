@@ -66,7 +66,9 @@ dagster = "1.4.2"
 torch = "^1.13.1" # NOTE: Fix for `ValueError: libcublas.so.*[0-9] not found in the system path`
 seaborn = "^0.12.2"
 umap-learn = {extras = ["plot"], version = "^0.5.3"}
-# hdbscan = "^0.8.33" # FIXME: Can't build with pyproject inside docker
+
+# FIXME: Can't build with pyproject inside docker -> https://github.com/MaartenGr/BERTopic/issues/816
+# hdbscan = "^0.8.33"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.1.2"

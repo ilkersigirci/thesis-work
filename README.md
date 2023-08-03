@@ -1,5 +1,15 @@
 # Install
 
+## Env File
+
+```env
+PUID=<REDACTED>
+PGID=<REDACTED>
+DAGSTER_HOME=<REDACTED>
+WANDB_API_KEY=<REDACTED>
+```
+
+
 ## Default installation
 
 - Install poetry

@@ -1,6 +1,13 @@
 from typing import Optional
 
-from dagster import Config, EnvVar, RunConfig, asset, materialize_to_memory
+from dagster import (
+    Config,
+    EnvVar,
+    OpExecutionContext,
+    RunConfig,
+    asset,
+    materialize_to_memory,
+)
 from dotenv import load_dotenv
 from pydantic import Field
 
@@ -26,6 +33,20 @@ def pythonic_asset(config: MyAssetConfig) -> str:
 
 
 @asset
+def show_env(context: OpExecutionContext) -> None:
+    import os
+
+    context.log.info(os.environ)
+
+
+@asset
+def test_cuda(context: OpExecutionContext) -> None:
+    import torch
+
+    context.log.info(f"CUDA available: {torch.cuda.is_available()}")
+
+
+@asset
 def pythonic_asset_with_resource(
     config: MyAssetConfig, wandb_resource: WandbResource
 ) -> str:
@@ -40,7 +61,6 @@ if __name__ == "__main__":
         int_validation=26,
         required_field="Required field",
         required_none_field=None,
-        # required_none_field="Required None field",
     )
 
     result = materialize_to_memory(

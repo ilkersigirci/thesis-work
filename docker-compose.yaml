@@ -1,6 +1,9 @@
 version: "3.9"
+name: thesis
 
 networks:
+  t2_proxy:
+    external: true
   thesis_work_network:
     driver: bridge
     name: thesis_work_network
@@ -9,11 +12,14 @@ services:
   # TODO: Volume bind training model files
   thesis-work-development:
     image: thesis-work-development:latest
-    user: "${UID}:${GID}"
+    user: "${PUID}:${PGID}"
     build:
       context: .
       dockerfile: ./docker/Dockerfile
       target: development
+      args:
+        PUID: ${PUID}
+        PGID: ${PGID}
     container_name: thesis-work-dev
     restart: on-failure
     networks:
@@ -28,18 +34,17 @@ services:
               count: 1
               capabilities: [gpu]
 
-  # TODO:
-  # - Volume bind training model files
+  # TODO: Volume bind training model files
   thesis-work-dagster:
     image: thesis-work-development:latest
-    user: "${UID}:${GID}"
+    user: "${PUID}:${PGID}"
     build:
       context: .
       dockerfile: ./docker/Dockerfile
       target: development
       args:
-        USER_ID: ${UID}
-        GROUP_ID: ${GID}
+        PUID: ${PUID}
+        PGID: ${PGID}
     container_name: thesis-work-dagster
     command:
       - "dagster"
@@ -50,9 +55,12 @@ services:
       - "3005"
     restart: on-failure
     networks:
+      - t2_proxy
       - thesis_work_network
-    ports:
-      - "3005:3005"
+    # ports:
+    #   - "3005:3005"
+    # env_file:
+    #   - ./.env
     volumes:
       - /home/ilker/dagster_home_thesis:/home/ilker/dagster_home_thesis:rw
       - ./dagster_pipelines:/opt/thesis_work/dagster_pipelines:rw
@@ -64,15 +72,28 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.thesis-rtr.entrypoints=https"
+      - "traefik.http.routers.thesis-rtr.rule=Host(`thesis.$DOMAINNAME`)"
+      ## Middlewares
+      - "traefik.http.routers.thesis-rtr.middlewares=chain-no-auth@file"
+      ## HTTP Services
+      - "traefik.http.routers.thesis-rtr.service=thesis-svc"
+      - "traefik.http.services.thesis-svc.loadbalancer.server.port=3005"
 
 # TODO: Volume bind training model files
   thesis-work-streamlit:
     image: thesis-work-development:latest
-    user: "${UID}:${GID}"
+    user: "${PUID}:${PGID}"
     build:
       context: .
       dockerfile: ./docker/Dockerfile
       target: development
+      args:
+        PUID: ${PUID}
+        PGID: ${PGID}
     container_name: thesis-work-streamlit
     command:
       - "streamlit"

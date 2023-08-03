@@ -1,8 +1,8 @@
 # Adapted from:
 # https://github.com/NannyML/nannyml/blob/main/Dockerfile
 
-ARG USER_ID
-ARG GROUP_ID
+ARG PUID
+ARG PGID
 ARG APP_NAME=thesis_work
 ARG APP_PATH=/opt/$APP_NAME
 ARG PYTHON_VERSION=3.10-slim-bullseye
@@ -12,8 +12,8 @@ ARG POETRY_VERSION=1.5.1
 # Stage: staging
 #
 FROM python:$PYTHON_VERSION as staging
-ARG USER_ID
-ARG GROUP_ID
+ARG PUID
+ARG PGID
 ARG APP_NAME
 ARG APP_PATH
 ARG POETRY_VERSION
@@ -50,8 +50,8 @@ COPY . .
 # Stage: development
 #
 FROM staging as development
-ARG USER_ID
-ARG GROUP_ID
+ARG PUID
+ARG PGID
 ARG APP_NAME
 ARG APP_PATH
 
@@ -61,8 +61,8 @@ ENV POETRY_INSTALLER_MAX_WORKERS=10
 WORKDIR $APP_PATH
 RUN --mount=type=cache,target=$POETRY_CACHE_DIR poetry install
 
-RUN addgroup --gid $GROUP_ID user
-RUN adduser --disabled-password --gecos '' --uid $USER_ID --gid $GROUP_ID user
+RUN addgroup --gid $PGID user
+RUN adduser --disabled-password --gecos '' --uid $PUID --gid $PGID user
 USER user
 
 ENTRYPOINT ["poetry", "run"]

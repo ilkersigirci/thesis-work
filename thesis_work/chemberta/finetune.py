@@ -6,10 +6,10 @@ import wandb
 from thesis_work.chemberta.utils import (  # noqa: F401
     evaluate_model,
     get_model,
-    load_data_splits,
     predict_model,
     train_model,
 )
+from thesis_work.data import load_data_splits
 
 logging.basicConfig(level=logging.INFO)
 transformers_logger = logging.getLogger(__file__)

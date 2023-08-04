@@ -49,6 +49,7 @@ placeholder = "thesis_work.scripts.placeholder:placeholder_script"
 
 [tool.poetry.dependencies]
 python = "3.10.*"
+dagster = "1.4.2"
 deepchem = "^2.7.1"
 streamlit= "^1.19.0"
 py3dmol = "2.0.0.post2"
@@ -62,7 +63,6 @@ wandb = "^0.13.11"
 bertviz = "^1.4.0"
 # apex = {git = "https://github.com/NVIDIA/apex.git", branch = "master"}
 numpy = "1.21.6" # NOTE: Only needed for `chemberta.load_molnet_dataset`
-dagster = "1.4.2"
 torch = "^1.13.1" # NOTE: Fix for `ValueError: libcublas.so.*[0-9] not found in the system path`
 seaborn = "^0.12.2"
 umap-learn = {extras = ["plot"], version = "^0.5.3"}

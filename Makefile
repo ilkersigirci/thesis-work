@@ -231,7 +231,8 @@ profile-builtin: ## Profile the file with cProfile and shows the report in the t
 	${PYTHON} -m cProfile -s tottime ${PROFILE_FILE_PATH}
 
 dagster-dev:  ## Run dagster development env with environment variables
-	dagster dev -p 3006
+	dagster-webserver - p 3006
+	# dagster dev -p 3006
 
 docker: ## Build docker image
 	docker build --tag ${DOCKER_IMAGE}:${DOCKER_TARGET} --file docker/Dockerfile --target ${DOCKER_TARGET} .

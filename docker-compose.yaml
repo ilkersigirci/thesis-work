@@ -47,8 +47,9 @@ services:
         PGID: ${PGID}
     container_name: thesis-work-dagster
     command:
-      - "dagster"
-      - "dev"
+      # - "dagster"
+      # - "dev"
+      - "dagster-webserver"
       - "-h"
       - "0.0.0.0"
       - "-p"

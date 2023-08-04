@@ -47,6 +47,11 @@ def test_cuda(context: OpExecutionContext) -> None:
 
 
 @asset
+def test_print(context: OpExecutionContext) -> None:
+    print("Hello world")  # noqa: T201
+
+
+@asset
 def pythonic_asset_with_resource(
     config: MyAssetConfig, wandb_resource: WandbResource
 ) -> str:

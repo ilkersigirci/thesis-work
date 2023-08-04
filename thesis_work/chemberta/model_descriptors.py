@@ -3,6 +3,7 @@ from typing import Union
 import numpy as np
 import pandas as pd
 import torch
+from simpletransformers.language_representation import RepresentationModel
 from transformers import RobertaModel, RobertaTokenizer, RobertaTokenizerFast
 
 
@@ -61,21 +62,40 @@ def get_model_descriptor(
     return torch.mean(last_layer[0], dim=0).detach().numpy()
 
 
-def add_model_descriptor_to_df(df: pd.DataFrame, model_name: str) -> pd.DataFrame:
-    """Adds vector embedding to the dataframe."""
+def get_model_descriptors(
+    smiles_series: pd.Series,
+    model_name: str = "DeepChem/ChemBERTa-77M-MLM",
+    method: str = "simpletransformers",
+) -> pd.DataFrame:
+    """Calculates and returns model vector embedding for given smiles list.
 
-    if "smiles" not in df.columns:
-        raise ValueError("df must contain a column named smiles")
+    NOTE
+        - For 68,000 compounds with method: simpletransformers it takes:
+            - 19s on GPU
+            - 4m 23 on CPU
+    """
 
-    model, tokenizer = initialize_model_tokenizer(model_name)
+    if method not in ["manual", "simpletransformers"]:
+        raise ValueError("method must be either manual or simpletransformers")
 
-    df["vector"] = df["smiles"].apply(
-        lambda x: get_model_descriptor(
-            model=model, tokenizer=tokenizer, smiles_str=x
-        ).tolist()
-    )
+    cuda_available = torch.cuda.is_available()
 
-    return df
+    if method == "manual":
+        model, tokenizer = initialize_model_tokenizer(model_name)
+
+        return smiles_series.apply(
+            lambda x: get_model_descriptor(
+                model=model, tokenizer=tokenizer, smiles_str=x
+            ).tolist()
+        )
+    elif method == "simpletransformers":
+        model = RepresentationModel(
+            model_type="roberta", model_name=model_name, use_cuda=cuda_available
+        )
+
+        # combine_strategy = None  # word_embedding
+        combine_strategy = "mean"  # sentence_embedding
+        return model.encode_sentences(smiles_series, combine_strategy=combine_strategy)
 
 
 # Mean Pooling - Take attention mask into account for correct averaging

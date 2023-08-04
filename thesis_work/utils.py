@@ -17,12 +17,12 @@ def is_valid_smiles(smiles: str) -> bool:
         return False
 
 
-def get_ecfp_descriptor(smiles_str: str):
+def get_ecfp_descriptor(smiles_str: str, nBits: int = 1024):
     if not is_valid_smiles(smiles_str):
         raise ValueError("Invalid SMILES string")
 
     mol = Chem.MolFromSmiles(smiles_str)
-    fp = Chem.AllChem.GetMorganFingerprintAsBitVect(mol, radius=2, nBits=2048)
+    fp = Chem.AllChem.GetMorganFingerprintAsBitVect(mol, radius=2, nBits=nBits)
 
     return np.array(fp)
 

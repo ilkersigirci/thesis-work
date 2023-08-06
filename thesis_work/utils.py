@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import seaborn as sns
 from rdkit import Chem
@@ -23,8 +22,9 @@ def get_ecfp_descriptor(smiles_str: str, nBits: int = 1024):
 
     mol = Chem.MolFromSmiles(smiles_str)
     fp = Chem.AllChem.GetMorganFingerprintAsBitVect(mol, radius=2, nBits=nBits)
+    # fp = np.array(fp)
 
-    return np.array(fp)
+    return fp
 
 
 def get_largest_fragment_from_smiles(s: str):

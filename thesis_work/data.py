@@ -1,5 +1,6 @@
+import logging
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -10,6 +11,12 @@ from thesis_work.molnet_dataloader import load_molnet_dataset
 # from thesis_work.chemberta.molnet_dataloader import write_molnet_dataset_for_chemprop
 
 DATA_PATH = Path(__file__).parent / "data"
+logger = logging.getLogger(__name__)
+
+
+# TODO:
+def transform_bbbp():
+    pass
 
 
 def load_data(protein_type: str = "kinase") -> pd.DataFrame:
@@ -19,6 +26,37 @@ def load_data(protein_type: str = "kinase") -> pd.DataFrame:
     df.columns = ["text", "labels"]
 
     return df
+
+
+def load_interacted_compounds(protein_type: str = "kinase") -> pd.DataFrame:
+    """ "Loads data which only has interacted compounds"""
+    df = load_data(protein_type=protein_type)
+    df = df[df["labels"] == 1]
+
+    return df
+
+
+# TODO: Not finished
+def load_mixed_interacted_compounds(
+    protein_types: List[str], each_sample_size: int = 1000, random_state: int = 42
+) -> pd.DataFrame:
+    """
+    Loads interactive compounds from multiple protein types.
+    And sample each protein type
+    """
+    for protein_type in protein_types:
+        data = load_interacted_compounds(protein_types=protein_types)
+        active_compounds_num = len(data)
+
+        if active_compounds_num < each_sample_size:
+            message = (
+                f"Number of interacted compounds for {protein_type} is {active_compounds_num},"
+                f" and it is  less than {each_sample_size}"
+            )
+            logger.warning(message)
+
+        data = data.sample(n=each_sample_size, random_state=random_state)
+        return data
 
 
 def load_data_splits(

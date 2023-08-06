@@ -73,6 +73,8 @@ def get_model_descriptors(
         - For 68,000 compounds with method: simpletransformers it takes:
             - 19s on GPU
             - 4m 23 on CPU
+        - For simpletransformers methods, returninng `tolist()` is important hence, we
+        embed them in dataframe.
     """
 
     if method not in ["manual", "simpletransformers"]:
@@ -95,7 +97,9 @@ def get_model_descriptors(
 
         # combine_strategy = None  # word_embedding
         combine_strategy = "mean"  # sentence_embedding
-        return model.encode_sentences(smiles_series, combine_strategy=combine_strategy)
+        return model.encode_sentences(
+            smiles_series, combine_strategy=combine_strategy
+        ).tolist()
 
 
 # Mean Pooling - Take attention mask into account for correct averaging

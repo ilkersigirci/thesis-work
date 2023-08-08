@@ -69,6 +69,7 @@ umap-learn = {extras = ["plot"], version = "^0.5.3"}
 
 # FIXME: Can't build with pyproject inside docker -> https://github.com/MaartenGr/BERTopic/issues/816
 # hdbscan = "^0.8.33"
+leidenalg = "^0.10.1"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.1.2"

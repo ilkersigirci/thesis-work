@@ -2103,6 +2103,77 @@ files = [
 ]
 
 [[package]]
+name = "igraph"
+version = "0.10.6"
+description = "High performance graph data structures and algorithms"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "igraph-0.10.6-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:eca5d01773a8b48bb585fb972c8afcf0cbfb791627a6706ccf56c0685b8ccca7"},
+    {file = "igraph-0.10.6-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:ca05a065108d126771d4867c1e6867fdc340f86f9634978de1326aa2de782138"},
+    {file = "igraph-0.10.6-cp37-cp37m-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:81c4809ae45406cb81f985b643d8c9516c0394fa5f0aabe9a617f6506501c97e"},
+    {file = "igraph-0.10.6-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7edef14bed493d104213e95a21252f6ac9374fb1383966244c9fb3c615927317"},
+    {file = "igraph-0.10.6-cp37-cp37m-musllinux_1_1_aarch64.whl", hash = "sha256:96cdb8fdd9be3e4bd741b71436286f011f39bf7477cf7406d0d5ad9afa55f812"},
+    {file = "igraph-0.10.6-cp37-cp37m-musllinux_1_1_i686.whl", hash = "sha256:62a39bcebfe863c607642e110c4846de9631caa4ce1c6e2e11fae9b1d66904dd"},
+    {file = "igraph-0.10.6-cp37-cp37m-musllinux_1_1_x86_64.whl", hash = "sha256:c21f39fd40f7a0534442cb52e7dc07ee59aad4e52238a3b1c5fcb76f880d9648"},
+    {file = "igraph-0.10.6-cp37-cp37m-win32.whl", hash = "sha256:1deb496ccf6a71d07f4952e05b6aea3dd10e18abae9aadcbfd88f640cc804fa1"},
+    {file = "igraph-0.10.6-cp37-cp37m-win_amd64.whl", hash = "sha256:527319db746f22adefba3ccbe1e7fba485edd14339af7c953e34e329f04d423f"},
+    {file = "igraph-0.10.6-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:0a753a48f96c48d01944221f189b989a03151f6e0e37862675248612e45ddd18"},
+    {file = "igraph-0.10.6-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:c08023eb9a3df384e5d8285ec8a60d0e5c1738c6d139a0b51ac5da024538d466"},
+    {file = "igraph-0.10.6-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:7e737d4946e30bf561272a394d3c35181d453ab605a9650812200510b92b58b8"},
+    {file = "igraph-0.10.6-cp38-cp38-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:82bacc57b40e6f2f1e7550073a283af38ed1ca9654f68796376eea1413988768"},
+    {file = "igraph-0.10.6-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:53c0d0000f57c920549626b48e4b81685c268795df3657251763e50b83e8dac5"},
+    {file = "igraph-0.10.6-cp38-cp38-musllinux_1_1_aarch64.whl", hash = "sha256:1a3dcf7b23e05dc7b1cf258bd82a52ed9a71e36ccc091480475bfe210ab60a17"},
+    {file = "igraph-0.10.6-cp38-cp38-musllinux_1_1_i686.whl", hash = "sha256:da6009f347bdf14191bb65352a9eb5b1e2ba9014d928306b60b460dc549d21c8"},
+    {file = "igraph-0.10.6-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:d1a935f7cb7a7490eef225bb5072ba3208cddf4a26aab9395f21a5a6082ed48f"},
+    {file = "igraph-0.10.6-cp38-cp38-win32.whl", hash = "sha256:3e93a2d6ac310d8f6b258aa659f1e2c36ed6a5c2982f79425e33a0d370df95c6"},
+    {file = "igraph-0.10.6-cp38-cp38-win_amd64.whl", hash = "sha256:2913d91d9aeae107295fe238e1fe73d1150fca51b4e863c0442904dfb36f0d5a"},
+    {file = "igraph-0.10.6-cp39-abi3-macosx_10_9_x86_64.whl", hash = "sha256:eb97640e9e71913015e7073341a5f6b4017fe025222950873c507d4ee97670f9"},
+    {file = "igraph-0.10.6-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:409f377ea828d73bdf8da1e8372492db570efea765508eb091ec827492604ab7"},
+    {file = "igraph-0.10.6-cp39-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a4d88c6b392e70d1e8b9fb7747b545c9837b0232105ace379e63a6b08d987f23"},
+    {file = "igraph-0.10.6-cp39-abi3-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:053cdff880e46dca5a754777a5b2d68e904e82e831c6eb8ba7fdaed8d004a888"},
+    {file = "igraph-0.10.6-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:868b558ca3d3363e0864246c20a9e937f849125103bd5e1e45e5f233121c1632"},
+    {file = "igraph-0.10.6-cp39-abi3-musllinux_1_1_aarch64.whl", hash = "sha256:ad8a9245d1d27f50003c387105a52a9794b070fcc448f23fd58f7288126500ea"},
+    {file = "igraph-0.10.6-cp39-abi3-musllinux_1_1_i686.whl", hash = "sha256:6142060215c7bc5007f65ceffaa2ae1d84d0ef45bd9cbe8bc0670380200beb0f"},
+    {file = "igraph-0.10.6-cp39-abi3-musllinux_1_1_x86_64.whl", hash = "sha256:434f71859d39bfe7285c1ff02486492cf0d9236e50d2b0efd3f3fb316f106ebe"},
+    {file = "igraph-0.10.6-cp39-abi3-win32.whl", hash = "sha256:f375b5e9faea3381c9bb878195cbfc83444a13fb357f8e6c5767d2d9e3745e26"},
+    {file = "igraph-0.10.6-cp39-abi3-win_amd64.whl", hash = "sha256:69d21b26599c86c6b937138280b13306f9b4e380498cc13896c603985c5ee80a"},
+    {file = "igraph-0.10.6-pp310-pypy310_pp73-macosx_10_9_x86_64.whl", hash = "sha256:06ca4879236cbb52dd33ddb8e5d562b387f91607fe2bc5f277054778560448c2"},
+    {file = "igraph-0.10.6-pp310-pypy310_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:95b1b02a3d0c321339f2ed7283f37a22591c3b6a084393748369d5815aafe0a9"},
+    {file = "igraph-0.10.6-pp310-pypy310_pp73-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:a1cc73149e5ae448054c04050e5cfcdd9d886f72883ec9ca11185e16f62df2b1"},
+    {file = "igraph-0.10.6-pp310-pypy310_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:521e9a1ab869d65cdc7713f2649794e8076c2d6b210dcad37ac6bcaffaf858de"},
+    {file = "igraph-0.10.6-pp310-pypy310_pp73-win_amd64.whl", hash = "sha256:547f5e815063e68acd1efedf31ccb3f204a7d6e80fdddd96cb18b11610744912"},
+    {file = "igraph-0.10.6-pp37-pypy37_pp73-macosx_10_9_x86_64.whl", hash = "sha256:4f1a33d7bf8ebaaa0f6401db437e23c3fe90b13c042897fa6123e0cf63605149"},
+    {file = "igraph-0.10.6-pp37-pypy37_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e1d3a0882224dafadb259a0e660650779a7714f3d931a03127af43ef05a4d6e2"},
+    {file = "igraph-0.10.6-pp37-pypy37_pp73-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:169d7f1f8f1a39d1fa965dba0cab69b0d03de4b5e3272b196c60c3104a7e2735"},
+    {file = "igraph-0.10.6-pp37-pypy37_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:71a03c57550066a5cbf6fc6621d470fbf4abcf33ecb975a21e13e09cf45b965b"},
+    {file = "igraph-0.10.6-pp37-pypy37_pp73-win_amd64.whl", hash = "sha256:b3e038f78324e138869358bf17f9e57bcd665f7ddf6ed4b5f83fcbfc782f5059"},
+    {file = "igraph-0.10.6-pp38-pypy38_pp73-macosx_10_9_x86_64.whl", hash = "sha256:936c681b3d6c507f3d1008c37d7ce6ef570d0ad932a94af1d512609da72a8ec1"},
+    {file = "igraph-0.10.6-pp38-pypy38_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:47637170741eb48550a18dc1072d354476866a3d6bc30b260a23acc04d15168f"},
+    {file = "igraph-0.10.6-pp38-pypy38_pp73-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:3bb368af87b5ea1877baf0cc337e6d83bb688f1f81c9f75973da92c30a4106c3"},
+    {file = "igraph-0.10.6-pp38-pypy38_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b40da28b2ed1b35d24794996ff38ed3292ddaeea8cbeb48da146df0bf32021ae"},
+    {file = "igraph-0.10.6-pp38-pypy38_pp73-win_amd64.whl", hash = "sha256:81fbd93bbe81127aa98247a777a4eb2902443079254696d5aaa0a146cff88663"},
+    {file = "igraph-0.10.6-pp39-pypy39_pp73-macosx_10_9_x86_64.whl", hash = "sha256:3296e013c695488c313daa218aa5861dcd3623f298935f2f6f48b2bf1e65e5d0"},
+    {file = "igraph-0.10.6-pp39-pypy39_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4c743703ff6a9907deddf3f15ddb7a4e0d525a0055e5cf29ac2143b865fdf6c2"},
+    {file = "igraph-0.10.6-pp39-pypy39_pp73-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:ddbbdaab269700d35969feaab73b9cbf7c55daa7711aaa01e0f9c598c9b8fbe1"},
+    {file = "igraph-0.10.6-pp39-pypy39_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:26ae1fe7e4e55a851cdffcd302d9ad530303e47676424ee422dbede7450f948f"},
+    {file = "igraph-0.10.6-pp39-pypy39_pp73-win_amd64.whl", hash = "sha256:1a21dae12de610474b5b64f92822f3da4af2cedd60413b56aa55cc165dc0c763"},
+    {file = "igraph-0.10.6.tar.gz", hash = "sha256:76f7aad294514412f835366a7d9a9c1e7a34c3e6ef0a6c3a1a835234323228e8"},
+]
+
+[package.dependencies]
+texttable = ">=1.6.2"
+
+[package.extras]
+cairo = ["cairocffi (>=1.2.0)"]
+doc = ["Sphinx (>=4.2.0)", "sphinxbootstrap4theme (>=0.6.0)"]
+matplotlib = ["matplotlib (>=3.5.0,<3.6.0)"]
+plotly = ["plotly (>=5.3.0)"]
+plotting = ["cairocffi (>=1.2.0)"]
+test = ["Pillow (>=9)", "cairocffi (>=1.2.0)", "matplotlib (>=3.6.0)", "networkx (>=2.5)", "numpy (>=1.19.0)", "pandas (>=1.1.0)", "plotly (>=5.3.0)", "pytest (>=7.0.1)", "pytest-timeout (>=2.1.0)", "scipy (>=1.5.0)"]
+test-musl = ["cairocffi (>=1.2.0)", "networkx (>=2.5)", "pytest (>=7.0.1)", "pytest-timeout (>=2.1.0)"]
+
+[[package]]
 name = "imageio"
 version = "2.31.1"
 description = "Library for reading and writing a wide range of image, video, scientific, and volumetric data formats."
@@ -2748,6 +2819,52 @@ files = [
 [package.extras]
 lint = ["pre-commit (>=3.3)"]
 test = ["pytest (>=7.4)", "pytest-cov (>=4.1)"]
+
+[[package]]
+name = "leidenalg"
+version = "0.10.1"
+description = "Leiden is a general algorithm for methods of community detection in large networks."
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "leidenalg-0.10.1-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:9c4dcd13d58316acdf3cdaeedea205994d18890294eb7e1a99766192485d0bab"},
+    {file = "leidenalg-0.10.1-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:84b812c6ad30de20375f0d30fee8a22059f79e8f7dfc82370c723f1267b2a238"},
+    {file = "leidenalg-0.10.1-cp37-cp37m-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:56fd202bc311c63dc631e4ec3dc4961aabfdad674bbcffde33fb7decd784fa80"},
+    {file = "leidenalg-0.10.1-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6c898dbf718b9d2e61d0c3880fb8b86cea1d894c99da75ecdfb6df3dc3c6b808"},
+    {file = "leidenalg-0.10.1-cp37-cp37m-musllinux_1_1_i686.whl", hash = "sha256:cf826eff0ed4148af61039f97e9e6f1be9ac6967dfab7329c50de9663b941d4f"},
+    {file = "leidenalg-0.10.1-cp37-cp37m-musllinux_1_1_x86_64.whl", hash = "sha256:6843499521eb0255da121c1b5eff9c97fbf43f92af712eb34a1969d908fbe77f"},
+    {file = "leidenalg-0.10.1-cp37-cp37m-win32.whl", hash = "sha256:157e873443549d3f56bd15468e2f630ede6d25cf47426799aa9fc94a88e0042e"},
+    {file = "leidenalg-0.10.1-cp37-cp37m-win_amd64.whl", hash = "sha256:4699ee1e26451eebc564a512fcd1f2a90ccb3bffa9c5cde3d766001527fc9684"},
+    {file = "leidenalg-0.10.1-cp38-abi3-macosx_10_9_x86_64.whl", hash = "sha256:34b2f2206edce3cff5a56ae29f86c4774d4694f37851cacc846ce6c1fe9dfd9d"},
+    {file = "leidenalg-0.10.1-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:d9aed1378f4ea4b1f425a1b04728d5cef6f9da9231091e108ad6e9dc9c8df58e"},
+    {file = "leidenalg-0.10.1-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a290fa0e87a3ac2a6e7a4b8d56bbfb5044066c46ac25328966ce137c291c057c"},
+    {file = "leidenalg-0.10.1-cp38-abi3-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:98b5600640020648a181dae2579ea92dc4138796326bb2aa4fce1d191b4da82b"},
+    {file = "leidenalg-0.10.1-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bd2288ae6b38349ad30af97e2a9184b372b886afae2ddc672f948ac47ad450f0"},
+    {file = "leidenalg-0.10.1-cp38-abi3-musllinux_1_1_i686.whl", hash = "sha256:f6d8597c234ef30fabb22dec7097a735f8109f208c410b230f6391df03dd89ca"},
+    {file = "leidenalg-0.10.1-cp38-abi3-musllinux_1_1_x86_64.whl", hash = "sha256:7290660f4d1f74c80214cf9e51dfe8944c43431074d6ae03c163dba40795c81c"},
+    {file = "leidenalg-0.10.1-cp38-abi3-win32.whl", hash = "sha256:01a7e05f30367b26a8d9496096b0698b309e22ef31608e127149d20110511dec"},
+    {file = "leidenalg-0.10.1-cp38-abi3-win_amd64.whl", hash = "sha256:bfe8c101391435f092032e22d9cd211cc39fca884c0c3c592341ed1e2e137951"},
+    {file = "leidenalg-0.10.1-pp310-pypy310_pp73-macosx_10_9_x86_64.whl", hash = "sha256:c7fee2639a471d7cff335d5b02010230e88952e38e20cd8da806843d6497d2f6"},
+    {file = "leidenalg-0.10.1-pp310-pypy310_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4d7c0532ff01dc7c920d06535bb74a3fa50975114e4d438af71f21c297f0f058"},
+    {file = "leidenalg-0.10.1-pp310-pypy310_pp73-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:5a657e5b7bac637ace60917c1b8194155e55c437a2574c724f806d569145dc34"},
+    {file = "leidenalg-0.10.1-pp310-pypy310_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c4866cdc29e411122ac8223000fd1e81e66afcf98de8ed6a8f0d62f7bdb1d1df"},
+    {file = "leidenalg-0.10.1-pp37-pypy37_pp73-macosx_10_9_x86_64.whl", hash = "sha256:9c5025cae5d0bef874fff4f3607ffa861ecc4018eb0951417f36d06c01bb441b"},
+    {file = "leidenalg-0.10.1-pp37-pypy37_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:7edc5636775ed1ebd195a5e0cebab59a0e7e5d70035344d420fb7eecc8910291"},
+    {file = "leidenalg-0.10.1-pp37-pypy37_pp73-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:29beecb8972d215ee34a1dca05c3def28680d9b0031f4b05ef40017f6d6508fa"},
+    {file = "leidenalg-0.10.1-pp37-pypy37_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3e0054475fd25c22f3aba402aab94b9485c771f6a128b13ee7772cec22e66e99"},
+    {file = "leidenalg-0.10.1-pp38-pypy38_pp73-macosx_10_9_x86_64.whl", hash = "sha256:6168f3254e43e7b3c4e344c38ae2d14224beae8983986962397f409dacffa34b"},
+    {file = "leidenalg-0.10.1-pp38-pypy38_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:76e55cba50c4d2080ce5f937ea405ff8388ceb20727fce55524cab3b10228fbb"},
+    {file = "leidenalg-0.10.1-pp38-pypy38_pp73-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:4197098f831aba150d88f132e613adad248f9c72e484b10685b849f1187d64d6"},
+    {file = "leidenalg-0.10.1-pp38-pypy38_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:21899c291b6cfd3d0dd5331668ee3693b3fb5ac089b337d6847cfbc37090419f"},
+    {file = "leidenalg-0.10.1-pp39-pypy39_pp73-macosx_10_9_x86_64.whl", hash = "sha256:21d63e0da7b7666c9a5ee965c66485c337b7d4d98c10465e78d24e7ba44137ea"},
+    {file = "leidenalg-0.10.1-pp39-pypy39_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3916302539581b1bf47b0020e42faf0f28b7ef72745babdfd40d984677f6ce67"},
+    {file = "leidenalg-0.10.1-pp39-pypy39_pp73-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:fee04c11623d52fed65c8a37324dcb9f286f3a5a0c6838977b6aeffd865a30b4"},
+    {file = "leidenalg-0.10.1-pp39-pypy39_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:2d975dfec83aceef9c13face7786300dcb5c5e08923a54d5c030883d7f6cb4bc"},
+    {file = "leidenalg-0.10.1.tar.gz", hash = "sha256:457ad96982a80bd5c657189f42dfeb77eebcd3b744a110e5a2c1618d2eb80b47"},
+]
+
+[package.dependencies]
+igraph = ">=0.10.0,<0.11"
 
 [[package]]
 name = "linkify-it-py"
@@ -6025,6 +6142,17 @@ docs = ["myst-parser", "pydata-sphinx-theme", "sphinx"]
 test = ["pre-commit", "pytest (>=7.0)", "pytest-timeout"]
 
 [[package]]
+name = "texttable"
+version = "1.6.7"
+description = "module to create simple ASCII tables"
+optional = false
+python-versions = "*"
+files = [
+    {file = "texttable-1.6.7-py2.py3-none-any.whl", hash = "sha256:b7b68139aa8a6339d2c320ca8b1dc42d13a7831a346b446cb9eb385f0c76310c"},
+    {file = "texttable-1.6.7.tar.gz", hash = "sha256:290348fb67f7746931bcdfd55ac7584ecd4e5b0846ab164333f0794b121760f2"},
+]
+
+[[package]]
 name = "threadpoolctl"
 version = "3.2.0"
 description = "threadpoolctl"
@@ -7112,4 +7240,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "3.10.*"
-content-hash = "c30c8fc366196f12dbf4a3cfbaa7363743e6c7fb8350ed16ddc7926218d67bc8"
+content-hash = "debf6191303b3cd97a6420aa82f49d309bc2776403cf426f8f2f05133dec9ea4"

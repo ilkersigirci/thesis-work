@@ -88,7 +88,7 @@ def get_model_descriptors(
         return smiles_series.apply(
             lambda x: get_model_descriptor(
                 model=model, tokenizer=tokenizer, smiles_str=x
-            ).tolist()
+            )  # .tolist()
         )
     elif method == "simpletransformers":
         model = RepresentationModel(
@@ -99,7 +99,7 @@ def get_model_descriptors(
         combine_strategy = "mean"  # sentence_embedding
         return model.encode_sentences(
             smiles_series, combine_strategy=combine_strategy
-        ).tolist()
+        )  # .tolist()
 
 
 # Mean Pooling - Take attention mask into account for correct averaging

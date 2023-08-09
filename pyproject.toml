@@ -40,12 +40,15 @@ generate-setup-file = false
 [tool.poetry.scripts]
 placeholder = "thesis_work.scripts.placeholder:placeholder_script"
 
-## poetry source add --secondary private-pypi http://private-pypi/simple/
-# [[tool.poetry.source]]
-# name = "private-pypi"
-# url = "http://private-pypi/simple/" # NOTE: /simple/ is important
-# default = false
-# secondary = true
+[[tool.poetry.source]]
+name = "PyPI"
+priority = "default"
+
+# poetry source add --priority=supplemental nvidia-pypi https://pypi.nvidia.com/
+[[tool.poetry.source]]
+name = "nvidia-pypi"
+url = "https://pypi.nvidia.com/"
+priority = "supplemental"
 
 [tool.poetry.dependencies]
 python = "3.10.*"
@@ -63,13 +66,35 @@ wandb = "^0.13.11"
 bertviz = "^1.4.0"
 # apex = {git = "https://github.com/NVIDIA/apex.git", branch = "master"}
 numpy = "1.21.6" # NOTE: Only needed for `chemberta.load_molnet_dataset`
-torch = "^1.13.1" # NOTE: Fix for `ValueError: libcublas.so.*[0-9] not found in the system path`
+# torch = "^1.13.1" # NOTE: Fix for `ValueError: libcublas.so.*[0-9] not found in the system path`
+torch = "2.0.0"
 seaborn = "^0.12.2"
+# hdbscan = "^0.8.33" # FIXME: Can't build with pyproject inside docker -> https://github.com/MaartenGr/BERTopic/issues/816
 umap-learn = {extras = ["plot"], version = "^0.5.3"}
-
-# FIXME: Can't build with pyproject inside docker -> https://github.com/MaartenGr/BERTopic/issues/816
-# hdbscan = "^0.8.33"
 leidenalg = "^0.10.1"
+datashader = "^0.15.1"
+
+# Nvidia Rapids Related - Cuda 11
+cuml-cu11 = { url = "https://pypi.nvidia.com/cuml-cu11/cuml_cu11-23.4.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
+cudf-cu11 = { url = "https://pypi.nvidia.com/cudf-cu11/cudf_cu11-23.4.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
+dask-cudf-cu11 = { url = "https://pypi.nvidia.com/dask-cudf-cu11/dask_cudf_cu11-23.4.0-py3-none-any.whl" }
+raft-dask-cu11 = { url = "https://pypi.nvidia.com/raft-dask-cu11/raft_dask_cu11-23.4.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
+cubinlinker-cu11 = { url = "https://pypi.nvidia.com/cubinlinker-cu11/cubinlinker_cu11-0.3.0.post1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
+ptxcompiler-cu11 = { url = "https://pypi.nvidia.com/ptxcompiler-cu11/ptxcompiler_cu11-0.7.0.post1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
+rmm-cu11 = { url = "https://pypi.nvidia.com/rmm-cu11/rmm_cu11-23.4.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
+pylibraft-cu11 = { url = "https://pypi.nvidia.com/pylibraft-cu11/pylibraft_cu11-23.4.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
+ucx-py-cu11 = { url = "https://pypi.nvidia.com/ucx-py-cu11/ucx_py_cu11-0.31.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
+
+# Nvidia Rapids Related - Cuda 12
+# cuml-cu12 = { url = "https://pypi.nvidia.com/cuml-cu12/cuml_cu12-23.6.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
+# cudf-cu12 = { url = "https://pypi.nvidia.com/cudf-cu12/cudf_cu12-23.6.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
+# dask-cudf-cu12 = { url = "https://pypi.nvidia.com/dask-cudf-cu12/dask_cudf_cu12-23.6.0-py3-none-any.whl" }
+# raft-dask-cu12 = { url = "https://pypi.nvidia.com/raft-dask-cu12/raft_dask_cu12-23.6.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
+# rmm-cu12 = {url = "https://pypi.nvidia.com/rmm-cu12/rmm_cu12-23.6.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"}
+# pylibraft-cu12 = {url = "https://pypi.nvidia.com/pylibraft-cu12/pylibraft_cu12-23.6.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"}
+# ucx-py-cu12 = {url = "https://pypi.nvidia.com/ucx-py-cu12/ucx_py_cu12-0.32.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"}
+# python-utils = "^3.7.0"
+
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.1.2"

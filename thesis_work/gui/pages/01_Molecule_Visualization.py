@@ -13,9 +13,11 @@ from thesis_work.chemberta.model_descriptors import (
 )
 from thesis_work.utils import get_ecfp_descriptor, is_valid_smiles
 
+CAFFEINE_SMILES = "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+
 
 def create_static_visualization(
-    compound_smiles: str = "c1cc(C(=O)O)c(OC(=O)C)cc1",
+    compound_smiles: str = CAFFEINE_SMILES,
 ) -> None:
     """Create static image of molecule from SMILES string."""
     m = Chem.MolFromSmiles(compound_smiles)
@@ -47,7 +49,7 @@ def render_mol(xyz, height: int = 600, width: int = 600):
 
 
 def create_dynamic_visualization(
-    compound_smiles: str = "c1cc(C(=O)O)c(OC(=O)C)cc1",
+    compound_smiles: str = CAFFEINE_SMILES,
 ) -> None:
     """Create interactive molecule visualization from SMILES string."""
     blk = makeblock(compound_smiles)
@@ -55,7 +57,7 @@ def create_dynamic_visualization(
 
 
 def create_model_attention_visualization(
-    compound_smiles: str = "c1cc(C(=O)O)c(OC(=O)C)cc1",
+    compound_smiles: str = CAFFEINE_SMILES,
 ) -> None:
     pass
 
@@ -63,7 +65,7 @@ def create_model_attention_visualization(
 if __name__ == "__main__":
     st.set_page_config(page_title="Model Visualization", layout="wide")
 
-    default_smiles = "c1cc(C(=O)O)c(OC(=O)C)cc1"
+    default_smiles = CAFFEINE_SMILES
     compound_smiles = st.text_input("SMILES string", default_smiles)
 
     if not is_valid_smiles(compound_smiles):
@@ -94,7 +96,9 @@ if __name__ == "__main__":
         st.stop()
 
     if descriptor_choice == "ECFP":
-        ecfp_descriptor = get_ecfp_descriptor(smiles_str=compound_smiles)
+        ecfp_descriptor = get_ecfp_descriptor(
+            smiles_str=compound_smiles, return_type="np_array"
+        )
         st.write(ecfp_descriptor)
     elif descriptor_choice == "ChemBERTa":
         model_name = "DeepChem/ChemBERTa-77M-MLM"

@@ -10,7 +10,7 @@ from thesis_work.molnet_dataloader import load_molnet_dataset
 
 # from thesis_work.chemberta.molnet_dataloader import write_molnet_dataset_for_chemprop
 
-DATA_PATH = Path(__file__).parent / "data"
+DATA_PATH = Path(__file__).parent.parent / "data"
 logger = logging.getLogger(__name__)
 
 
@@ -19,13 +19,21 @@ def transform_bbbp():
     pass
 
 
-def load_data(protein_type: str = "kinase") -> pd.DataFrame:
+def load_data(
+    protein_type: str = "kinase", subfolder: str = "original"
+) -> pd.DataFrame:
     """ "Loads data"""
-    data_path = DATA_PATH / f"{protein_type}_smiles.csv"
+    data_path = DATA_PATH / subfolder / f"{protein_type}.csv"
     df = pd.read_csv(data_path)
     df.columns = ["text", "labels"]
 
     return df
+
+
+def save_data(df: pd.DataFrame, name: str, subfolder: str = "result_data"):
+    """Saves data"""
+    data_path = DATA_PATH / subfolder / f"{name}.csv"
+    df.to_csv(data_path, index=False)
 
 
 def load_interacted_compounds(protein_type: str = "kinase") -> pd.DataFrame:
@@ -36,27 +44,41 @@ def load_interacted_compounds(protein_type: str = "kinase") -> pd.DataFrame:
     return df
 
 
-# TODO: Not finished
 def load_mixed_interacted_compounds(
-    protein_types: List[str], each_sample_size: int = 1000, random_state: int = 42
+    protein_types: Optional[List[str]] = None,
+    each_sample_size: int = 1000,
+    random_state: int = 42,
+    convert_category: bool = True,
 ) -> pd.DataFrame:
     """
     Loads interactive compounds from multiple protein types.
     And sample each protein type
     """
-    for protein_type in protein_types:
-        data = load_interacted_compounds(protein_types=protein_types)
-        active_compounds_num = len(data)
+    result = pd.DataFrame()
 
-        if active_compounds_num < each_sample_size:
+    if protein_types is None:
+        protein_types = ["gpcr", "kinase", "protease"]
+
+    protein_types.sort()
+
+    for protein_type in protein_types:
+        data = load_interacted_compounds(protein_type=protein_type)
+
+        if len(data) < each_sample_size:
             message = (
-                f"Number of interacted compounds for {protein_type} is {active_compounds_num},"
+                f"Number of interacted compounds for {protein_type} is {len(data)},"
                 f" and it is  less than {each_sample_size}"
             )
             logger.warning(message)
 
         data = data.sample(n=each_sample_size, random_state=random_state)
-        return data
+        data = data.assign(labels=protein_type)
+        result = pd.concat([result, data], axis=0, ignore_index=True)
+
+    if convert_category is True:
+        result["labels"] = result["labels"].astype("category").cat.codes
+
+    return result
 
 
 def load_data_splits(

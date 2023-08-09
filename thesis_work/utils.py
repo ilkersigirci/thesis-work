@@ -1,7 +1,9 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import seaborn as sns
 from rdkit import Chem
+from rdkit.Chem import AllChem
 from rdkit.Chem.MolStandardize.rdMolStandardize import LargestFragmentChooser
 
 
@@ -16,13 +18,23 @@ def is_valid_smiles(smiles: str) -> bool:
         return False
 
 
-def get_ecfp_descriptor(smiles_str: str, nBits: int = 1024):
+def get_ecfp_descriptor(
+    smiles_str: str, radius: int = 2, nBits: int = 1024, return_type="original"
+):
     if not is_valid_smiles(smiles_str):
         raise ValueError("Invalid SMILES string")
 
+    if return_type not in ["original", "np_array"]:
+        raise ValueError("Invalid return type")
+
     mol = Chem.MolFromSmiles(smiles_str)
-    fp = Chem.AllChem.GetMorganFingerprintAsBitVect(mol, radius=2, nBits=nBits)
-    # fp = np.array(fp)
+    fp = Chem.AllChem.GetMorganFingerprintAsBitVect(mol, radius=radius, nBits=nBits)
+
+    if return_type == "np_array":
+        arr = np.zeros((1,))
+        AllChem.DataStructs.ConvertToNumpyArray(fp, arr)
+
+        return arr
 
     return fp
 

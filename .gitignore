@@ -265,6 +265,9 @@ cython_debug/
 
 # Custom ignores
 
+data/*
+!data/original
+
 /.ruff_cache/
 public
 
@@ -272,7 +275,6 @@ public
 profile.*
 
 # Training results
-data
 temp
 bert-loves-chemistry
 # outputs

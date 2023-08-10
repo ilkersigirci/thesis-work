@@ -1,10 +1,32 @@
+import logging
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from rdkit import Chem
+import torch
+from rdkit import Chem, RDLogger
 from rdkit.Chem import AllChem
 from rdkit.Chem.MolStandardize.rdMolStandardize import LargestFragmentChooser
+
+
+def ignore_warnings(log_level: int = logging.ERROR):
+    # Silence transformers warnings
+    logging.getLogger("transformers.modeling_utils").setLevel(log_level)
+    # from transformers import logging
+    # logging.set_verbosity_error()
+
+    # Silence RDKit warnings
+    logger = RDLogger.logger()
+    logger.setLevel(RDLogger.CRITICAL)
+
+
+def check_device(device: str = "cuda"):
+    if device not in ["cpu", "cuda"]:
+        raise ValueError("device must be either cpu or cuda")
+
+    if device == "cuda" and not torch.cuda.is_available():
+        raise ValueError("cuda device requires GPU")
 
 
 def is_valid_smiles(smiles: str) -> bool:

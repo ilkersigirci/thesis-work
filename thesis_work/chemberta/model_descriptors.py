@@ -66,8 +66,15 @@ def get_model_descriptors(
     smiles_series: pd.Series,
     model_name: str = "DeepChem/ChemBERTa-77M-MLM",
     method: str = "simpletransformers",
+    combine_strategy: str = "mean",
 ) -> pd.DataFrame:
     """Calculates and returns model vector embedding for given smiles list.
+
+    Args:
+        smiles_series: Smiles data.
+        model_name: Model name to be used.
+        method: Method to be used for embedding.
+        combine_strategy = None -> word_embedding / "mean" -> sentence_embedding
 
     NOTE
         - For 68,000 compounds with method: simpletransformers it takes:
@@ -94,9 +101,6 @@ def get_model_descriptors(
         model = RepresentationModel(
             model_type="roberta", model_name=model_name, use_cuda=cuda_available
         )
-
-        # combine_strategy = None  # word_embedding
-        combine_strategy = "mean"  # sentence_embedding
         return model.encode_sentences(
             smiles_series, combine_strategy=combine_strategy
         )  # .tolist()

@@ -1,9 +1,17 @@
-from typing import List
+import logging
+from typing import List, Tuple
 
 import numpy as np
+import pandas as pd
+import torch
+from cuml import UMAP as umap_gpu, KMeans as cuKMeans
 from rdkit import DataStructs
+from sklearn.cluster import KMeans as skKMeans
+from umap import UMAP as umap_cpu
 
-from thesis_work.utils import get_ecfp_descriptor
+from thesis_work.utils import check_device, get_ecfp_descriptor
+
+logger = logging.getLogger(__name__)
 
 
 def get_efcp_similarity_matrix(
@@ -60,3 +68,100 @@ def get_efcp_distance_matrix(smiles_list: List[str], method: str = "fast"):
     distance_matrix = 1 - similarity_matrix
 
     return distance_matrix
+
+
+def apply_umap(  # noqa: PLR0913
+    data: np.array,
+    n_components: int = 2,
+    n_neighbors: int = 15,
+    min_dist: float = 0.1,
+    metric: str = "euclidean",
+    random_state: int = 42,
+    device: str = "cuda",
+) -> pd.DataFrame:
+    """
+    Apply UMAP and return reduced dimensionality data.
+
+    Args:
+        data: Data to be reduced.
+        n_components: Dimensionality of the data after reduction.
+        n_neighbors: Number of neighbors to use for UMAP reduction.
+
+    CPU  Only Params: low_memory=False
+
+    TIMES:
+        - TODO: Add times for CPU and GPU
+    """
+    check_device(device=device)
+
+    if n_components > data.shape[1]:
+        raise ValueError("n_components must be less than or equal to data.shape[1]")
+
+    UMAP = umap_gpu if torch.cuda.is_available() else umap_cpu
+
+    umap_model = UMAP(
+        n_neighbors=n_neighbors,
+        n_components=n_components,
+        min_dist=min_dist,
+        metric=metric,
+        # metric="jaccard",
+        random_state=random_state,
+    )
+
+    return umap_model.fit_transform(data)
+
+
+def apply_k_means(  # noqa: PLR0913
+    data: np.array,
+    init_method: str = "k-means++",
+    n_clusters: int = 2,
+    random_state: int = 42,
+    n_init: int = 1,
+    device: str = "cuda",
+) -> Tuple[np.array, np.array]:
+    """Fit k-means and return cluster_labels and inertia.
+
+    Args:
+        data: Data to be clustered.
+        init_method: Method for initialization, either k-means++ or random.
+        n_clusters: Number of clusters.
+        random_state: Random state for reproducibility.
+        n_init: Number of times the k-means algorithm will be run with different centroid seeds.
+        reduced_dimension: Dimensionality of the data after UMAP reduction.
+        device: Device to use for clustering, either cpu or cuda.
+
+    Raises:
+        ValueError: If device is not either cpu or cuda.
+        ValueError: If cuda device is requested but GPU is not available.
+
+    TIMES:
+        - 1 to 20 clusters
+            CPU: 3.1s
+            GPU: 2.2s
+        - 1 to 50 clusters
+            CPU: 11s
+            GPU: 2.1s
+
+    """
+
+    check_device(device=device)
+
+    if device == "cuda" and init_method == "k-means++":
+        init_method = "scalable-k-means++"
+
+    K_MEANS = cuKMeans if torch.cuda.is_available() else skKMeans
+
+    kmeans = K_MEANS(
+        init=init_method,
+        n_clusters=n_clusters,
+        random_state=random_state,
+        n_init=n_init,
+    )
+    kmeans.fit(data)
+
+    return kmeans.labels_, kmeans.inertia_
+
+
+# TODO:
+def apply_butina():
+    pass

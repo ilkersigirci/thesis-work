@@ -1,8 +1,10 @@
 import logging
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 import torch
 from cuml import UMAP as umap_gpu, KMeans as cuKMeans
 from rdkit import DataStructs
@@ -109,6 +111,31 @@ def apply_umap(  # noqa: PLR0913
     )
 
     return umap_model.fit_transform(data)
+
+
+def plot_umap(
+    data: pd.DataFrame,
+    labels: np.array,
+    legend_title: str,
+    plot_title: Optional[str] = None,
+) -> None:
+    """Plot UMAP."""
+    palette = sns.color_palette("bright", 3)
+
+    plt.figure(figsize=(8, 8))
+    _ = sns.scatterplot(
+        data=data,
+        x="X",
+        y="Y",
+        hue="labels",
+        alpha=0.5,
+        palette=palette,
+    )
+    if plot_title is not None:
+        plt.title(plot_title)
+
+    plt.legend(title=legend_title, loc="upper right", labels=labels)
+    plt.show()
 
 
 def apply_k_means(  # noqa: PLR0913

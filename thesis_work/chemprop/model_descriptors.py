@@ -38,7 +38,7 @@ def load_model(path: str, device: str = "cuda") -> torch.nn.Module:
     return model
 
 
-def get_model_desciptors(smiles_series: pd.Series) -> np.array:
+def get_model_descriptors(smiles_series: pd.Series) -> np.array:
     """Calculates and returns model vector embedding for given smiles list.
 
     Args:
@@ -72,5 +72,5 @@ def get_model_desciptors(smiles_series: pd.Series) -> np.array:
 
 if __name__ == "__main__":
     smiles_series = pd.Series(["CCO", "CCN", "CCC"])
-    descriptors = get_model_desciptors(smiles_series=smiles_series)
+    descriptors = get_model_descriptors(smiles_series=smiles_series)
     print(descriptors)  # noqa: T201

@@ -46,19 +46,44 @@ def get_ecfp_descriptor(
     if not is_valid_smiles(smiles_str):
         raise ValueError("Invalid SMILES string")
 
-    if return_type not in ["original", "np_array"]:
+    if return_type not in ["original", "numpy", "list"]:
         raise ValueError("Invalid return type")
 
     mol = Chem.MolFromSmiles(smiles_str)
     fp = Chem.AllChem.GetMorganFingerprintAsBitVect(mol, radius=radius, nBits=nBits)
 
-    if return_type == "np_array":
-        arr = np.zeros((1,))
+    if return_type == "numpy":
+        arr = np.zeros((1,), dtype=np.int8)
         AllChem.DataStructs.ConvertToNumpyArray(fp, arr)
+        fp = arr
 
         return arr
+    elif return_type == "list":
+        arr = np.zeros((1,), dtype=np.int8)
+        AllChem.DataStructs.ConvertToNumpyArray(fp, arr)
+        fp = arr.tolist()
 
     return fp
+
+
+def get_ecfp_descriptors(
+    smiles_series: pd.Series, radius: int = 2, nBits: int = 1024
+) -> np.array:
+    """
+    TODO: Make this faster
+    """
+    descriptors = np.zeros((smiles_series.shape[0], nBits), dtype=np.int8)
+
+    for i, smiles in enumerate(smiles_series):
+        descriptors[i, :] = get_ecfp_descriptor(
+            smiles_str=smiles, radius=radius, nBits=nBits, return_type="numpy"
+        )
+
+    # NOTE: Don't work
+    # vectorized_function = np.vectorize(get_ecfp_descriptor)
+    # descriptors = vectorized_function(smiles_series.to_numpy(), radius, nBits)
+
+    return descriptors
 
 
 def get_largest_fragment_from_smiles(s: str):

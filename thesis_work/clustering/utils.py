@@ -1,14 +1,13 @@
 import logging
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import torch
-from cuml import UMAP as umap_gpu, KMeans as cuKMeans
+from cuml import UMAP as umap_gpu
 from rdkit import DataStructs
-from sklearn.cluster import KMeans as skKMeans
 from umap import UMAP as umap_cpu
 
 from thesis_work.utils import check_device, get_ecfp_descriptor
@@ -136,59 +135,3 @@ def plot_umap(
 
     plt.legend(title=legend_title, loc="upper right", labels=labels)
     plt.show()
-
-
-def apply_k_means(  # noqa: PLR0913
-    data: np.array,
-    init_method: str = "k-means++",
-    n_clusters: int = 2,
-    random_state: int = 42,
-    n_init: int = 1,
-    device: str = "cuda",
-) -> Tuple[np.array, np.array]:
-    """Fit k-means and return cluster_labels and inertia.
-
-    Args:
-        data: Data to be clustered.
-        init_method: Method for initialization, either k-means++ or random.
-        n_clusters: Number of clusters.
-        random_state: Random state for reproducibility.
-        n_init: Number of times the k-means algorithm will be run with different centroid seeds.
-        reduced_dimension: Dimensionality of the data after UMAP reduction.
-        device: Device to use for clustering, either cpu or cuda.
-
-    Raises:
-        ValueError: If device is not either cpu or cuda.
-        ValueError: If cuda device is requested but GPU is not available.
-
-    TIMES:
-        - 1 to 20 clusters
-            CPU: 3.1s
-            GPU: 2.2s
-        - 1 to 50 clusters
-            CPU: 11s
-            GPU: 2.1s
-
-    """
-
-    check_device(device=device)
-
-    if device == "cuda" and init_method == "k-means++":
-        init_method = "scalable-k-means++"
-
-    K_MEANS = cuKMeans if torch.cuda.is_available() else skKMeans
-
-    kmeans = K_MEANS(
-        init=init_method,
-        n_clusters=n_clusters,
-        random_state=random_state,
-        n_init=n_init,
-    )
-    kmeans.fit(data)
-
-    return kmeans.labels_, kmeans.inertia_
-
-
-# TODO:
-def apply_butina():
-    pass

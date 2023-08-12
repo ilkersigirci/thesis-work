@@ -282,3 +282,4 @@ bert-loves-chemistry
 # runs
 # cache_dir
 wandb
+models/molbert

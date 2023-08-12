@@ -67,7 +67,7 @@ def get_model_descriptors(
     model_name: str = "DeepChem/ChemBERTa-77M-MLM",
     method: str = "simpletransformers",
     combine_strategy: str = "mean",
-) -> pd.DataFrame:
+) -> np.array:
     """Calculates and returns model vector embedding for given smiles list.
 
     Args:

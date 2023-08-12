@@ -54,9 +54,9 @@ def get_model_descriptors(smiles_series: pd.Series) -> np.array:
     """
 
     model = load_model(path=CHECKPOINT_MODEL_PATH)
-    smiles_list = smiles_series.tolist()
+    smiles_series = smiles_series.tolist()
 
-    data = get_data_from_smiles(smiles=[[smiles] for smiles in smiles_list])
+    data = get_data_from_smiles(smiles=[[smiles] for smiles in smiles_series])
 
     data_loader = MoleculeDataLoader(dataset=data, batch_size=64, num_workers=8)
 
@@ -66,6 +66,8 @@ def get_model_descriptors(smiles_series: pd.Series) -> np.array:
         fingerprint_type="MPN",
         disable_progress_bar=False,
     )
+
+    descriptors = np.array(descriptors)
 
     return descriptors
 

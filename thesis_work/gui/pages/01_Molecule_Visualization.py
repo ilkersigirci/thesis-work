@@ -97,7 +97,7 @@ if __name__ == "__main__":
 
     if descriptor_choice == "ECFP":
         ecfp_descriptor = get_ecfp_descriptor(
-            smiles_str=compound_smiles, return_type="np_array"
+            smiles_str=compound_smiles, return_type="numpy"
         )
         st.write(ecfp_descriptor)
     elif descriptor_choice == "ChemBERTa":

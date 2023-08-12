@@ -11,28 +11,29 @@ from thesis_work.chemberta.model_descriptors import (
 from thesis_work.chemprop.model_descriptors import (
     get_model_descriptors as get_model_descriptors_chemprop,
 )
+from thesis_work.clustering.butina import apply_butina
+from thesis_work.clustering.dimensionality_reduction import apply_pca, apply_umap
 from thesis_work.clustering.evaluation import (
     adjusted_rand_index,
     silhouette_index,
 )
 from thesis_work.clustering.k_means import apply_k_means
-from thesis_work.clustering.utils import apply_umap, check_device
 from thesis_work.initialization_utils import (
     check_function_init_params,
     check_initialization_params,
 )
-from thesis_work.utils import get_ecfp_descriptors
+from thesis_work.utils import check_device, get_ecfp_descriptors
 
 # from thesis_work.clustering.evaluation import davies_bouldin_index, rand_index
 
-dimentionality_reduction_mapping = {
+dimensionality_reduction_mapping = {
     "UMAP": apply_umap,
-    # "PCA": None,
+    "PCA": apply_pca,
 }
 
 clustering_algorithm_mapping = {
     "K-MEANS": apply_k_means,
-    # "BUTINA": None,
+    "BUTINA": apply_butina,
     # "WARD": None,
 }
 
@@ -102,10 +103,11 @@ class ClusterRunner:
         )
 
         self.vector_embeddings = None
-        self.dimentionality_reduction_flag = False
+        self.dimensionality_reduction_flag = False
 
         if self.wandb_run_name is None:
-            self.wandb_run_name = run.name
+            run.name = run.id
+            self.wandb_run_name = run.id
 
     def __del__(self):
         if wandb.run is not None:
@@ -140,11 +142,11 @@ class ClusterRunner:
 
         check_initialization_params(
             attr=self.dimensionality_reduction_method,
-            accepted_list=[None, *list(dimentionality_reduction_mapping.keys())],
+            accepted_list=[None, *list(dimensionality_reduction_mapping.keys())],
         )
 
         if self.dimensionality_reduction_method is not None:
-            self.dimensionality_reduction_func = dimentionality_reduction_mapping[
+            self.dimensionality_reduction_func = dimensionality_reduction_mapping[
                 self.dimensionality_reduction_method
             ]
 
@@ -199,10 +201,7 @@ class ClusterRunner:
             )
         elif self.model_name == "chemprop":
             self.vector_embeddings = pd.DataFrame(
-                get_model_descriptors_chemprop(
-                    smiles_series=self.smiles_df["text"],
-                    model_name=self.model_name,
-                )
+                get_model_descriptors_chemprop(smiles_series=self.smiles_df["text"])
             )
         elif self.model_name == "ecfp":
             radius = 2
@@ -215,14 +214,14 @@ class ClusterRunner:
             )
 
     def run_dimensionality_reduction(self):
-        if self.dimentionality_reduction_flag is True:
+        if self.dimensionality_reduction_flag is True:
             return
 
         if self.dimensionality_reduction_func is not None:
             self.vector_embeddings = self.dimensionality_reduction_func(
                 self.vector_embeddings
             )
-            self.dimentionality_reduction_flag = True
+            self.dimensionality_reduction_flag = True
 
     def run_clustering(self):
         self.run_vector_embeddings()
@@ -244,6 +243,9 @@ class ClusterRunner:
                     "inertia": inertia,
                 }
             )
+
+        elif self.clustering_method == "BUTINA":
+            pass
 
     def run_multiple_clustering(self, n_clusters: int = 20):
         for n_cluster in range(2, n_clusters + 1):

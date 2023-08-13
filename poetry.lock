@@ -3813,6 +3813,29 @@ griffe = ">=0.30,<0.33"
 mkdocstrings = ">=0.20"
 
 [[package]]
+name = "mols2grid"
+version = "2.0.0"
+description = "Interactive 2D small molecule viewer"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "mols2grid-2.0.0-py3-none-any.whl", hash = "sha256:6fef63cb4621bff4b30b5f6654b203f50d33a196a3c594868255e7009e952212"},
+    {file = "mols2grid-2.0.0.tar.gz", hash = "sha256:9956e2f45c3b0ed68e7c12b58628fb1ea15c684e218551bc81c6ddf2b48e550b"},
+]
+
+[package.dependencies]
+ipywidgets = ">=7,<8"
+jinja2 = ">=2.11.0"
+numpy = "*"
+pandas = "*"
+
+[package.extras]
+build = ["build"]
+dev = ["mols2grid[build,docs,tests]"]
+docs = ["mistune (<3.0.0)"]
+tests = ["cairosvg (==2.5.2)", "flaky (==3.7.0)", "imagehash (>=4.3,<5.0)", "ipython (==7.12.0)", "pyautogecko (==0.1.3)", "pytest (==6.2.5)", "pytest-cov (==2.12.1)", "selenium (==4.10.0)"]
+
+[[package]]
 name = "mpmath"
 version = "1.3.0"
 description = "Python library for arbitrary-precision floating-point arithmetic"
@@ -8405,4 +8428,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "3.10.*"
-content-hash = "a1e9f5abd11a7111b5c44d6f482b06d93de9c966951af2366eb8cd917a0bdbee"
+content-hash = "ee82ede33ca3289b353d336fdc071666d048a2dc578bdca1af9416e5060e3397"

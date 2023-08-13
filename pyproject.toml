@@ -95,6 +95,7 @@ ucx-py-cu11 = { url = "https://pypi.nvidia.com/ucx-py-cu11/ucx_py_cu11-0.31.1-cp
 # ucx-py-cu12 = {url = "https://pypi.nvidia.com/ucx-py-cu12/ucx_py_cu12-0.32.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"}
 # python-utils = "^3.7.0"
 chemprop = "^1.6.1"
+mols2grid = "^2.0.0"
 
 
 [tool.poetry.group.test.dependencies]

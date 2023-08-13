@@ -1,4 +1,5 @@
 import logging
+from typing import List, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,6 +9,9 @@ import torch
 from rdkit import Chem, RDLogger
 from rdkit.Chem import AllChem
 from rdkit.Chem.MolStandardize.rdMolStandardize import LargestFragmentChooser
+from rdkit.DataStructs.cDataStructs import ExplicitBitVect
+
+from thesis_work.initialization_utils import check_initialization_params
 
 
 def ignore_warnings(log_level: int = logging.ERROR):
@@ -22,8 +26,7 @@ def ignore_warnings(log_level: int = logging.ERROR):
 
 
 def check_device(device: str = "cuda"):
-    if device not in ["cpu", "cuda"]:
-        raise ValueError("device must be either cpu or cuda")
+    check_initialization_params(attr=device, accepted_list=["cpu", "cuda"])
 
     if device == "cuda" and not torch.cuda.is_available():
         raise ValueError("cuda device requires GPU")
@@ -41,43 +44,71 @@ def is_valid_smiles(smiles: str) -> bool:
 
 
 def get_ecfp_descriptor(
-    smiles_str: str, radius: int = 2, nBits: int = 1024, return_type="original"
-):
+    smiles_str: str, radius: int = 2, nBits: int = 2048, return_type="original"
+) -> Union[np.array, ExplicitBitVect]:
     if not is_valid_smiles(smiles_str):
         raise ValueError("Invalid SMILES string")
 
-    if return_type not in ["original", "numpy", "list"]:
+    if return_type not in ["original", "numpy"]:
         raise ValueError("Invalid return type")
 
     mol = Chem.MolFromSmiles(smiles_str)
-    fp = Chem.AllChem.GetMorganFingerprintAsBitVect(mol, radius=radius, nBits=nBits)
+    fpgen = AllChem.GetMorganGenerator(fpSize=nBits, radius=radius)
 
-    if return_type == "numpy":
-        arr = np.zeros((1,), dtype=np.int8)
-        AllChem.DataStructs.ConvertToNumpyArray(fp, arr)
-        fp = arr
+    if return_type == "original":
+        # return = AllChem.GetMorganFingerprintAsBitVect(mol, radius=radius, nBits=nBits)
+        return fpgen.GetFingerprint(mol)
 
-        return arr
-    elif return_type == "list":
-        arr = np.zeros((1,), dtype=np.int8)
-        AllChem.DataStructs.ConvertToNumpyArray(fp, arr)
-        fp = arr.tolist()
+    elif return_type == "numpy":
+        # NOTE: Since it is binary, dtype=np.int8 is possible. BUT it gives error with cuml
+        # arr = np.zeros((1,), dtype=np.float32)
+        # AllChem.DataStructs.ConvertToNumpyArray(fp, arr)
 
-    return fp
+        return fpgen.GetFingerprintAsNumPy(mol).astype(np.float32)
 
 
 def get_ecfp_descriptors(
-    smiles_series: pd.Series, radius: int = 2, nBits: int = 1024
-) -> np.array:
+    smiles_series: pd.Series,
+    radius: int = 2,
+    nBits: int = 2048,
+    inner_return_type="original",
+) -> Union[np.array, List[ExplicitBitVect]]:
     """
     TODO: Make this faster
     """
-    descriptors = np.zeros((smiles_series.shape[0], nBits), dtype=np.int8)
+    check_initialization_params(
+        attr=inner_return_type, accepted_list=["original", "numpy"]
+    )
 
-    for i, smiles in enumerate(smiles_series):
-        descriptors[i, :] = get_ecfp_descriptor(
-            smiles_str=smiles, radius=radius, nBits=nBits, return_type="numpy"
-        )
+    if inner_return_type == "original":
+        # descriptors = np.zeros((smiles_series.shape[0], 1), dtype=object)
+        smiles_series = smiles_series.to_numpy()
+
+        descriptors = [
+            get_ecfp_descriptor(
+                smiles_str=smiles_str,
+                radius=radius,
+                nBits=nBits,
+                return_type=inner_return_type,
+            )
+            for smiles_str in smiles_series
+        ]
+
+        # FIXME: Doing this, breaks Tanimoto similarity calculation
+        # Because it converts `rdkit.DataStructs.cDataStructs.ExplicitBitVect` to numpy array
+        # descriptors = np.array(descriptors)
+
+    elif inner_return_type == "numpy":
+        # NOTE: Since it is binary, dtype=np.int8 is possible. BUT it gives error with cuml
+        descriptors = np.zeros((smiles_series.shape[0], nBits), dtype=np.float32)
+
+        for i, smiles in enumerate(smiles_series):
+            descriptors[i, :] = get_ecfp_descriptor(
+                smiles_str=smiles,
+                radius=radius,
+                nBits=nBits,
+                return_type=inner_return_type,
+            )
 
     # NOTE: Don't work
     # vectorized_function = np.vectorize(get_ecfp_descriptor)

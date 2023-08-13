@@ -283,3 +283,4 @@ bert-loves-chemistry
 # cache_dir
 wandb
 models/molbert
+molbert_repo

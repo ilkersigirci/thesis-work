@@ -1,36 +1,67 @@
 import logging
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 from rdkit import DataStructs
+from rdkit.DataStructs.cDataStructs import ExplicitBitVect
+from sklearn.metrics import pairwise_distances
 
-from thesis_work.utils import get_ecfp_descriptor
+from thesis_work.initialization_utils import check_initialization_params
+
+# from scipy.spatial import distance_matrix
 
 logger = logging.getLogger(__name__)
 
 
-def get_efcp_similarity_matrix(
-    smiles_list: List[str], method: str = "fast"
+# TODO: Add return_upper_tringular option
+def generic_distance_matrix(
+    x: np.array, y: Optional[np.array] = None, metric: str = "euclidean"
+):
+    """
+    Returns distance matrix for given x and y arrays
+    """
+    return pairwise_distances(X=x, Y=y, metric=metric)
+
+
+# TODO: Add return_upper_tringular option
+def generic_similarity_matrix(
+    x: np.array, y: Optional[np.array] = None, metric: str = "euclidean"
+):
+    """
+    Returns similarity matrix for given x and y arrays
+    """
+    return 1 - generic_distance_matrix(x=x, y=y, metric=metric)
+
+
+def efcp_similarity_matrix(
+    ecfps: List[ExplicitBitVect],  # NOTE: Should be created with inner_type=original
+    method: str = "fast",
+    return_upper_tringular: bool = True,
 ) -> np.array:
     """
     Returns ECFP similarity matrix for given smiles list
 
     NOTE:
+        - Butina expects, 1d upper triangular matrix. Moreover, this option saves lots of memory.
         - Fast method is ~10x faster than slow method. For 6k compounds:
             - Fast: 3.8 seconds
             - Slow: 39.1 seconds
     """
-
-    if method not in ["fast", "slow"]:
-        raise ValueError("method must be either fast or slow")
-
-    # Generate ECFP descriptors
-    ecfps = [
-        get_ecfp_descriptor(smiles_str=smiles_str, nBits=2048)
-        for smiles_str in smiles_list
-    ]
+    check_initialization_params(attr=method, accepted_list=["fast", "slow"])
 
     n_ecfps = len(ecfps)
+
+    if return_upper_tringular is True:
+        similariy_matrix_size = int((n_ecfps * (n_ecfps - 1)) / 2)
+        similarity_matrix = np.zeros(similariy_matrix_size)
+
+        last_fill_index = 0
+        for i in range(1, n_ecfps):
+            last_fill_index += i - 1
+            sims = np.array(DataStructs.BulkTanimotoSimilarity(ecfps[i], ecfps[:i]))
+            similarity_matrix[last_fill_index : last_fill_index + i] = sims
+
+        return similarity_matrix
 
     if method == "fast":
         similarity_matrix = np.zeros((n_ecfps, n_ecfps))
@@ -55,11 +86,15 @@ def get_efcp_similarity_matrix(
     return similarity_matrix
 
 
-def get_efcp_distance_matrix(smiles_list: List[str], method: str = "fast"):
-    similarity_matrix = get_efcp_similarity_matrix(
-        smiles_list=smiles_list, method=method
+def efcp_distance_matrix(
+    ecfps: List[ExplicitBitVect],
+    method: str = "fast",
+    return_upper_tringular: bool = True,
+) -> np.array:
+    """Returns ECFP distance matrix for given smiles list"""
+
+    return 1 - efcp_similarity_matrix(
+        ecfps=ecfps,
+        method=method,
+        return_upper_tringular=return_upper_tringular,
     )
-
-    distance_matrix = 1 - similarity_matrix
-
-    return distance_matrix

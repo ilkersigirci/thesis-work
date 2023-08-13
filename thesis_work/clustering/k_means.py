@@ -22,7 +22,7 @@ def apply_k_means(  # noqa: PLR0913
     """Fit k-means and return cluster_labels and inertia.
 
     Args:
-        data: Data to be clustered.
+        data: Data to be clustered. Vector embeddings of SMILES.
         init_method: Method for initialization, either k-means++ or random.
         n_clusters: Number of clusters.
         random_state: Random state for reproducibility.

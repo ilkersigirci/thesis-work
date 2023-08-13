@@ -40,6 +40,12 @@ def apply_pca(  # noqa: PLR0913
     if n_components > data.shape[1]:
         raise ValueError("n_components must be less than or equal to data.shape[1]")
 
+    if n_components == data.shape[1]:
+        logger.warning(
+            "n_components is equal to data.shape[1]. Returning original data."
+        )
+        return data
+
     PCA = pca_gpu if torch.cuda.is_available() else pca_cpu
 
     pca_model = PCA(
@@ -81,6 +87,12 @@ def apply_umap(  # noqa: PLR0913
 
     if n_components > data.shape[1]:
         raise ValueError("n_components must be less than or equal to data.shape[1]")
+
+    if n_components == data.shape[1]:
+        logger.warning(
+            "n_components is equal to data.shape[1]. Returning original data."
+        )
+        return data
 
     UMAP = umap_gpu if torch.cuda.is_available() else umap_cpu
 

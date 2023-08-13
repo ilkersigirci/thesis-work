@@ -2,9 +2,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
-import wandb
 from simpletransformers.classification import ClassificationArgs, ClassificationModel
 from sklearn.metrics import accuracy_score, average_precision_score
+
+import wandb
 
 OUTPUT_PATH = Path(__file__).parent.parent.parent
 

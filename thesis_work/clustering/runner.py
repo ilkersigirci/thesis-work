@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import pandas as pd
 
@@ -71,7 +71,7 @@ class ClusterRunner:
         self.random_state = random_state
         self.device = device
         self.dimensionality_reduction_method = (
-            dimensionality_reduction_method or dimensionality_reduction_method.upper()
+            dimensionality_reduction_method and dimensionality_reduction_method.upper()
         )
         self.dimensionality_reduction_method_kwargs = (
             dimensionality_reduction_method_kwargs or {}
@@ -192,16 +192,14 @@ class ClusterRunner:
             "DeepChem/ChemBERTa-77M-MTR",
             "DeepChem/ChemBERTa-77M-MLM",
         ]:
-            self.vector_embeddings = pd.DataFrame(
-                get_model_descriptors_chemberta(
-                    smiles_series=self.smiles_df["text"],
-                    model_name=self.model_name,
-                    method="simpletransformers",
-                )
+            self.vector_embeddings = get_model_descriptors_chemberta(
+                smiles_series=self.smiles_df["text"],
+                model_name=self.model_name,
+                method="simpletransformers",
             )
         elif self.model_name == "chemprop":
-            self.vector_embeddings = pd.DataFrame(
-                get_model_descriptors_chemprop(smiles_series=self.smiles_df["text"])
+            self.vector_embeddings = get_model_descriptors_chemprop(
+                smiles_series=self.smiles_df["text"]
             )
         elif self.model_name == "ecfp":
             radius = 2
@@ -209,8 +207,16 @@ class ClusterRunner:
 
             wandb.config.update({"radius": radius, "nBits": nBits})
 
+            # NOTE: Dimensionality reduction not working with original
+            inner_return_type = (
+                "original" if self.clustering_method == "BUTINA" else "numpy"
+            )
+
             self.vector_embeddings = get_ecfp_descriptors(
-                smiles_series=self.smiles_df["text"], radius=radius, nBits=nBits
+                smiles_series=self.smiles_df["text"],
+                radius=radius,
+                nBits=nBits,
+                inner_return_type=inner_return_type,
             )
 
     def run_dimensionality_reduction(self):
@@ -227,32 +233,57 @@ class ClusterRunner:
         self.run_vector_embeddings()
         self.run_dimensionality_reduction()
 
+        cluster_labels, inertia = self.clustering_func(
+            data=self.vector_embeddings, **self.clustering_method_kwargs
+        )
+        cluster_evaluation_func = clustering_evaluation_method_mapping[
+            self.clustering_evaluation_method
+        ]
+
+        score = cluster_evaluation_func(self.vector_embeddings, cluster_labels)
+
         if self.clustering_method == "K-MEANS":
-            cluster_labels, inertia = self.clustering_func(
-                data=self.vector_embeddings, **self.clustering_method_kwargs
-            )
-            cluster_evaluation_func = clustering_evaluation_method_mapping[
-                self.clustering_evaluation_method
-            ]
-
-            score = cluster_evaluation_func(self.vector_embeddings, cluster_labels)
-
             wandb.log(
-                {
+                data={
                     f"{self.clustering_evaluation_method}_score": score,
                     "inertia": inertia,
-                }
+                    "n_clusters": self.clustering_method_kwargs["n_clusters"],
+                },
+                # step=self.clustering_method_kwargs["n_clusters"],
             )
 
+        if self.clustering_method == "BUTINA":
+            wandb.log(
+                data={
+                    f"{self.clustering_evaluation_method}_score": score,
+                    "threshold": self.clustering_method_kwargs["threshold"],
+                },
+                # step=self.clustering_method_kwargs["threshold"],
+            )
+
+    def run_multiple_clustering(
+        self,
+        n_clusters: Optional[List[int]] = None,
+        thresholds: Optional[List[float]] = None,
+    ):
+        if self.clustering_method == "K-MEANS":
+            if n_clusters is None:
+                n_clusters = [2, 3, 5, 10, 20, 50, 100]
+
+            for n_cluster in n_clusters:
+                # NOTE: All clustering functions should implement n_clusters as a parameter
+                self.clustering_method_kwargs["n_clusters"] = n_cluster
+
+                self.run_clustering()
+
         elif self.clustering_method == "BUTINA":
-            pass
+            if thresholds is None:
+                thresholds = [0.2, 0.35, 0.5, 0.8]
 
-    def run_multiple_clustering(self, n_clusters: int = 20):
-        for n_cluster in range(2, n_clusters + 1):
-            # NOTE: All clustering functions should implement n_clusters as a parameter
-            self.clustering_method_kwargs["n_clusters"] = n_cluster
+            for threshold in thresholds:
+                self.clustering_method_kwargs["threshold"] = threshold
 
-            self.run_clustering()
+                self.run_clustering()
 
 
 if __name__ == "__main__":

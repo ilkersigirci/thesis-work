@@ -42,6 +42,8 @@ def apply_k_means(  # noqa: PLR0913
             CPU: 11s
             GPU: 2.1s
 
+    TODO:
+        - Check if it is really working wityh GPU
     """
 
     check_device(device=device)

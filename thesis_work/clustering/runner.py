@@ -132,7 +132,7 @@ class ClusterRunner:
 
         model_names = [
             "DeepChem/ChemBERTa-77M-MTR",
-            "DeepChem/ChemBERTa-77M",
+            "DeepChem/ChemBERTa-77M-MLM",
             "chemprop",
             "ecfp",
         ]

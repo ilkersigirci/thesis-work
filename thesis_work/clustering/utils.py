@@ -13,24 +13,37 @@ from thesis_work.initialization_utils import check_initialization_params
 logger = logging.getLogger(__name__)
 
 
-# TODO: Add return_upper_tringular option
 def generic_distance_matrix(
-    x: np.array, y: Optional[np.array] = None, metric: str = "euclidean"
+    x: np.array,
+    y: Optional[np.array] = None,
+    metric: str = "euclidean",
+    return_upper_tringular: bool = True,
 ):
     """
     Returns distance matrix for given x and y arrays
     """
-    return pairwise_distances(X=x, Y=y, metric=metric)
+    distance_matrix = pairwise_distances(X=x, Y=y, metric=metric)
+
+    if return_upper_tringular is True:
+        upper_indices = np.triu_indices(distance_matrix.shape[0], k=1)
+
+        return distance_matrix[upper_indices]
+    else:
+        return distance_matrix
 
 
-# TODO: Add return_upper_tringular option
 def generic_similarity_matrix(
-    x: np.array, y: Optional[np.array] = None, metric: str = "euclidean"
+    x: np.array,
+    y: Optional[np.array] = None,
+    metric: str = "euclidean",
+    return_upper_tringular: bool = True,
 ):
     """
     Returns similarity matrix for given x and y arrays
     """
-    return 1 - generic_distance_matrix(x=x, y=y, metric=metric)
+    return 1 - generic_distance_matrix(
+        x=x, y=y, metric=metric, return_upper_tringular=return_upper_tringular
+    )
 
 
 def efcp_similarity_matrix(

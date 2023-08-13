@@ -34,7 +34,9 @@ def apply_butina(
 
     if method == "generic":
         nfps = data.shape[0]
-        distances = generic_distance_matrix(x=data, metric=distance_metric)
+        distances = generic_distance_matrix(
+            x=data, metric=distance_metric, return_upper_tringular=True
+        )
     elif method == "ecfp":
         nfps = len(data)
         distances = efcp_distance_matrix(

@@ -52,6 +52,7 @@ priority = "supplemental"
 
 [tool.poetry.dependencies]
 python = "3.10.*"
+scikit-learn = "^1.3.0" # Min supported version for HDBSCAN
 dagster = "1.4.2"
 deepchem = "^2.7.1"
 streamlit= "^1.19.0"
@@ -69,7 +70,6 @@ numpy = "1.21.6" # NOTE: Only needed for `chemberta.load_molnet_dataset`
 # torch = "^1.13.1" # NOTE: Fix for `ValueError: libcublas.so.*[0-9] not found in the system path`
 torch = "2.0.0"
 seaborn = "^0.12.2"
-# hdbscan = "^0.8.33" # FIXME: Can't build with pyproject inside docker -> https://github.com/MaartenGr/BERTopic/issues/816
 umap-learn = {extras = ["plot"], version = "^0.5.3"}
 leidenalg = "^0.10.1"
 datashader = "^0.15.1"
@@ -96,7 +96,6 @@ ucx-py-cu11 = { url = "https://pypi.nvidia.com/ucx-py-cu11/ucx_py_cu11-0.31.1-cp
 # python-utils = "^3.7.0"
 chemprop = "^1.6.1"
 mols2grid = "^2.0.0"
-
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.1.2"

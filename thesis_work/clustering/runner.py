@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -11,7 +12,8 @@ from thesis_work.chemberta.model_descriptors import (
 from thesis_work.chemprop.model_descriptors import (
     get_model_descriptors as get_model_descriptors_chemprop,
 )
-from thesis_work.clustering.butina import apply_butina
+from thesis_work.clustering.butina import apply_butina, calculate_butina_distance_matrix
+from thesis_work.clustering.dbscan import apply_hdbscan  # apply_dbscan
 from thesis_work.clustering.dimensionality_reduction import apply_pca, apply_umap
 from thesis_work.clustering.evaluation import (
     adjusted_rand_index,
@@ -26,6 +28,8 @@ from thesis_work.utils import check_device, get_ecfp_descriptors
 
 # from thesis_work.clustering.evaluation import davies_bouldin_index, rand_index
 
+logger = logging.getLogger(__name__)
+
 dimensionality_reduction_mapping = {
     "UMAP": apply_umap,
     "PCA": apply_pca,
@@ -34,6 +38,8 @@ dimensionality_reduction_mapping = {
 clustering_algorithm_mapping = {
     "K-MEANS": apply_k_means,
     "BUTINA": apply_butina,
+    # "DBSCAN": apply_dbscan, # FIXME: Not working right now.
+    "HDBSCAN": apply_hdbscan,
     # "WARD": None,
 }
 
@@ -41,7 +47,7 @@ clustering_evaluation_method_mapping = {
     "silhouette": silhouette_index,
     "adjusted-rand-index": adjusted_rand_index,
     # "davies-bouldin": None,
-    "quality-partition-index": None,
+    # "quality-partition-index": None,
 }
 
 
@@ -104,6 +110,7 @@ class ClusterRunner:
 
         self.vector_embeddings = None
         self.dimensionality_reduction_flag = False
+        self.distance_matrix = None
 
         if self.wandb_run_name is None:
             run.name = run.id
@@ -175,6 +182,23 @@ class ClusterRunner:
             init_params=self.clustering_method_kwargs,
         )
 
+        if self.clustering_method == "BUTINA":
+            if self.model_name == "ecfp":
+                distance_method = self.clustering_method_kwargs.get("method", None)
+                if distance_method != "ecfp":
+                    self.clustering_method_kwargs["method"] = "ecfp"
+                    logger.info("Setting BUTINA method to `ecfp`")
+
+                if self.dimensionality_reduction_func is not None:
+                    self.dimensionality_reduction_func = None
+
+                    message = (
+                        "Disabling dimensionality reduction, since it is not working "
+                        "for BUTINA clustering with ecfp model"
+                    )
+
+                    logger.info(message)
+
         check_initialization_params(
             attr=self.clustering_evaluation_method,
             accepted_list=list(clustering_evaluation_method_mapping.keys()),
@@ -207,16 +231,14 @@ class ClusterRunner:
 
             wandb.config.update({"radius": radius, "nBits": nBits})
 
-            # NOTE: Dimensionality reduction not working with original
-            inner_return_type = (
-                "original" if self.clustering_method == "BUTINA" else "numpy"
-            )
+            # FIXME: Dimensionality reduction is not working with original
+            return_type = "original" if self.clustering_method == "BUTINA" else "numpy"
 
             self.vector_embeddings = get_ecfp_descriptors(
                 smiles_series=self.smiles_df["text"],
                 radius=radius,
                 nBits=nBits,
-                inner_return_type=inner_return_type,
+                inner_return_type=return_type,
             )
 
     def run_dimensionality_reduction(self):
@@ -225,16 +247,40 @@ class ClusterRunner:
 
         if self.dimensionality_reduction_func is not None:
             self.vector_embeddings = self.dimensionality_reduction_func(
-                self.vector_embeddings
+                data=self.vector_embeddings,
+                **self.dimensionality_reduction_method_kwargs,
             )
             self.dimensionality_reduction_flag = True
+
+    def _run_butina_distance_matrix(self) -> None:
+        if self.distance_matrix is not None:
+            return
+
+        method = self.clustering_method_kwargs.get("method", "generic")
+        distance_metric = self.clustering_method_kwargs.get(
+            "distance_metric", "euclidian"
+        )
+
+        self.distance_matrix, nfps = calculate_butina_distance_matrix(
+            data=self.vector_embeddings, method=method, distance_metric=distance_metric
+        )
+
+        self.clustering_method_kwargs["nfps"] = nfps
+        self.clustering_method_kwargs["is_distance_matrix"] = True
 
     def run_clustering(self):
         self.run_vector_embeddings()
         self.run_dimensionality_reduction()
 
+        clustering_data = self.vector_embeddings
+
+        # Don't calculate distance matrix each time
+        if self.clustering_method == "BUTINA":
+            self._run_butina_distance_matrix()
+            clustering_data = self.distance_matrix
+
         cluster_labels, inertia = self.clustering_func(
-            data=self.vector_embeddings, **self.clustering_method_kwargs
+            data=clustering_data, **self.clustering_method_kwargs
         )
         cluster_evaluation_func = clustering_evaluation_method_mapping[
             self.clustering_evaluation_method
@@ -252,7 +298,7 @@ class ClusterRunner:
                 # step=self.clustering_method_kwargs["n_clusters"],
             )
 
-        if self.clustering_method == "BUTINA":
+        elif self.clustering_method == "BUTINA":
             wandb.log(
                 data={
                     f"{self.clustering_evaluation_method}_score": score,
@@ -261,10 +307,32 @@ class ClusterRunner:
                 # step=self.clustering_method_kwargs["threshold"],
             )
 
-    def run_multiple_clustering(
+        elif self.clustering_method == "DBSCAN":
+            wandb.log(
+                data={
+                    f"{self.clustering_evaluation_method}_score": score,
+                    "min_samples": self.clustering_method_kwargs["min_samples"],
+                },
+                # step=self.clustering_method_kwargs["min_samples"],
+            )
+
+        elif self.clustering_method == "HDBSCAN":
+            wandb.log(
+                data={
+                    f"{self.clustering_evaluation_method}_score": score,
+                    "min_cluster_size": self.clustering_method_kwargs[
+                        "min_cluster_size"
+                    ],
+                },
+                # step=self.clustering_method_kwargs["min_cluster_size"],
+            )
+
+    def run_multiple_clustering(  # noqa: C901
         self,
         n_clusters: Optional[List[int]] = None,
         thresholds: Optional[List[float]] = None,
+        min_samples: Optional[List[int]] = None,
+        min_cluster_sizes: Optional[List[int]] = None,
     ):
         if self.clustering_method == "K-MEANS":
             if n_clusters is None:
@@ -285,6 +353,125 @@ class ClusterRunner:
 
                 self.run_clustering()
 
+        elif self.clustering_method == "DBSCAN":
+            if min_samples is None:
+                min_samples = [2, 3, 5, 10, 20, 50, 100]
+
+            for min_sample in min_samples:
+                self.clustering_method_kwargs["min_samples"] = min_sample
+
+                self.run_clustering()
+
+        elif self.clustering_method == "HDBSCAN":
+            if min_cluster_sizes is None:
+                min_cluster_size = [2, 3, 5, 10, 20, 50, 100]
+
+            for min_cluster_size in min_cluster_sizes:
+                self.clustering_method_kwargs["min_cluster_size"] = min_cluster_size
+
+                self.run_clustering()
+
 
 if __name__ == "__main__":
-    pass
+    import os
+
+    import pandas as pd
+
+    from thesis_work.data import load_mixed_interacted_compounds
+
+    ## To disable all wandb logging
+    os.environ["WANDB_MODE"] = "disabled"
+
+    wandb_project_name = "clustering-class-test"
+
+    random_state = 42
+    device = "cuda"
+
+    each_sample_size = 4000
+    protein_types = ["gpcr", "kinase", "protease"]
+    protein_types.sort()
+    protein_labels = list(range(len(protein_types)))
+
+    smiles_df = load_mixed_interacted_compounds(
+        protein_types=protein_types,
+        each_sample_size=each_sample_size,
+        random_state=random_state,
+        convert_category=True,
+    )
+
+    model_name = "DeepChem/ChemBERTa-77M-MTR"
+    # model_name = "DeepChem/ChemBERTa-77M-MLM"
+    # model_name = "ecfp"
+    # model_name = "chemprop"
+
+    n_components = 25
+
+    # dimensionality_reduction_method = None
+    # dimensionality_reduction_method_kwargs = None
+
+    dimensionality_reduction_method = "UMAP"
+    dimensionality_reduction_method_kwargs = {
+        "n_components": n_components,
+        "n_neighbors": 15,
+        "min_dist": 0.1,
+        "metric": "euclidean",
+    }
+
+    clustering_method = "BUTINA"
+    clustering_method_kwargs = {
+        # "method": "ecfp", # NOTE: Should match with model name
+        # "distance_metric": "tanimoto",
+        "method": "generic",
+        "distance_metric": "euclidean",
+        "threshold": 0.35,
+    }
+
+    # wandb_run_name = None
+    wandb_run_name = f"""
+        {clustering_method}_
+        {model_name if "/" not in model_name else model_name.split("/")[1]}
+    """
+
+    if dimensionality_reduction_method is not None:
+        wandb_run_name += f"_{dimensionality_reduction_method}"
+
+    if dimensionality_reduction_method_kwargs is not None:
+        wandb_run_name += f"_{dimensionality_reduction_method_kwargs['n_components']}"
+
+    # wandb_extra_configs = None
+    wandb_extra_configs = {"proteins": protein_types}
+
+    cluster_runner = ClusterRunner(
+        wandb_project_name=wandb_project_name,
+        wandb_run_name=wandb_run_name,
+        wandb_extra_configs=wandb_extra_configs,
+        smiles_df=smiles_df,
+        # smiles_df_path = None,
+        model_name=model_name,
+        random_state=random_state,
+        device=device,
+        dimensionality_reduction_method=dimensionality_reduction_method,
+        dimensionality_reduction_method_kwargs=dimensionality_reduction_method_kwargs,
+        clustering_method=clustering_method,
+        clustering_method_kwargs=clustering_method_kwargs,
+        clustering_evaluation_method="silhouette",
+    )
+
+    # n_clusters = None
+    n_clusters = list(range(2, 100, 3))
+
+    # thresholds = None
+    thresholds = [0.2, 0.35, 0.5, 0.8]
+
+    # min_samples = None
+    min_samples = [10, 20]
+
+    min_cluster_sizes = None
+    # min_cluster_sizes = [5, 10]
+
+    cluster_runner.run_clustering()
+    # cluster_runner.run_multiple_clustering(
+    #     n_clusters=n_clusters,
+    #     thresholds=thresholds,
+    #     min_cluster_sizes=min_cluster_sizes,
+    # )

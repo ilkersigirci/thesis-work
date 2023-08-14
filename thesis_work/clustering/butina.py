@@ -1,5 +1,5 @@
 import logging
-from typing import Tuple
+from typing import Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,13 +15,7 @@ from thesis_work.initialization_utils import check_initialization_params
 logger = logging.getLogger(__name__)
 
 
-def apply_butina(
-    data: np.array,  # Ecfp vector embeddings
-    method: str = "generic",
-    distance_metric: str = "euclidian",
-    threshold: float = 0.35,
-) -> Tuple[np.array, None]:
-    """Apply butina clustering on given smiles list."""
+def calculate_butina_distance_matrix(data: np.array, method: str, distance_metric: str):
     check_initialization_params(attr=method, accepted_list=["generic", "ecfp"])
 
     if method == "ecfp" and distance_metric != "tanimoto":
@@ -43,6 +37,38 @@ def apply_butina(
             ecfps=data, method="fast", return_upper_tringular=True
         )
 
+    return distances, nfps
+
+
+def apply_butina(  # noqa: PLR0913
+    data: np.array,
+    method: str = "generic",
+    distance_metric: str = "euclidian",
+    threshold: float = 0.35,
+    nfps: Optional[int] = None,
+    is_distance_matrix: bool = False,
+) -> Tuple[np.array, None]:
+    """Apply butina clustering on given smiles list.
+
+    Args:
+        data: Ecfp vector embeddings or distance matrix
+        method: Method to calculate distance matrix.
+        distance_metric: Distance metric to calculate distance matrix.
+        threshold: Threshold for butina clustering.
+        nfps: Length of original data, not the distance matrix.
+        is_distance_matrix: If True, data is already a distance matrix.
+    """
+    if is_distance_matrix is True:
+        if nfps is None:
+            raise ValueError("If is_distance_matrix is True, nfps must be given.")
+
+        distances = data
+
+    else:
+        distances, nfps = calculate_butina_distance_matrix(
+            data=data, method=method, distance_metric=distance_metric
+        )
+
     # TODO: Add distFunc=distance_metric as function
     clusters = Butina.ClusterData(distances, nfps, threshold, isDistData=True)
     cluster_labels = np.zeros(nfps, dtype=np.uint32)
@@ -56,6 +82,8 @@ def apply_butina(
 
 def butina_report(clusters):
     clusters = sorted(clusters, key=len, reverse=True)
+
+    # cluster_bins = np.bincount(clusters)
 
     ## Give a short report about the numbers of clusters and their sizes
     # num_clust_g1 = sum(1 for c in clusters if len(c) == 1)

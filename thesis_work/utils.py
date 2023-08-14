@@ -13,6 +13,13 @@ from rdkit.DataStructs.cDataStructs import ExplicitBitVect
 
 from thesis_work.initialization_utils import check_initialization_params
 
+logger = logging.getLogger(__name__)
+
+
+def initialize_logger(logging_level: int = logging.INFO):
+    logging.basicConfig()
+    logging.getLogger().setLevel(logging_level)
+
 
 def ignore_warnings(log_level: int = logging.ERROR):
     # Silence transformers warnings

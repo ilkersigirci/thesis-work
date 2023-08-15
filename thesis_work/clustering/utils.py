@@ -1,40 +1,43 @@
 import logging
-from typing import List, Optional
+from typing import List
 
 import numpy as np
 from rdkit import DataStructs
 from rdkit.DataStructs.cDataStructs import ExplicitBitVect
+from scipy.spatial.distance import pdist
 from sklearn.metrics import pairwise_distances
 
 from thesis_work.initialization_utils import check_initialization_params
 
 # from scipy.spatial import distance_matrix
+# from torch import pdist
 
 logger = logging.getLogger(__name__)
 
 
 def generic_distance_matrix(
     x: np.array,
-    y: Optional[np.array] = None,
     metric: str = "euclidean",
     return_upper_tringular: bool = True,
 ):
     """
     Returns distance matrix for given x and y arrays
     """
-    distance_matrix = pairwise_distances(X=x, Y=y, metric=metric)
 
     if return_upper_tringular is True:
-        upper_indices = np.triu_indices(distance_matrix.shape[0], k=1)
+        return pdist(X=x, metric=metric)
 
-        return distance_matrix[upper_indices]
+        ## NOTE: Allocates full array, which is unnecessary for only upper triangular matrix
+        # distance_matrix = pairwise_distances(X=x, metric=metric)
+        # upper_indices = np.triu_indices(distance_matrix.shape[0], k=1)
+        # result = distance_matrix[upper_indices]
+
     else:
-        return distance_matrix
+        return pairwise_distances(X=x, metric=metric)
 
 
 def generic_similarity_matrix(
     x: np.array,
-    y: Optional[np.array] = None,
     metric: str = "euclidean",
     return_upper_tringular: bool = True,
 ):
@@ -42,7 +45,7 @@ def generic_similarity_matrix(
     Returns similarity matrix for given x and y arrays
     """
     return 1 - generic_distance_matrix(
-        x=x, y=y, metric=metric, return_upper_tringular=return_upper_tringular
+        x=x, metric=metric, return_upper_tringular=return_upper_tringular
     )
 
 

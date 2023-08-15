@@ -1,3 +1,13 @@
+"""
+NOTE:
+    - Generating distance matrix needas lots of memory.
+    For example, array of size:
+        - (100_000, 100) needs 37 GB memory.
+        - (1_000_000, 25) needs 3.64 TB memory.
+    Hence, we need to consider this limitation when clustering big datasets.
+"""
+
+
 import logging
 from typing import Optional, Tuple
 
@@ -10,31 +20,40 @@ from thesis_work.clustering.utils import (
     efcp_distance_matrix,
     generic_distance_matrix,
 )
-from thesis_work.initialization_utils import check_initialization_params
 
 logger = logging.getLogger(__name__)
 
 
-def calculate_butina_distance_matrix(data: np.array, method: str, distance_metric: str):
-    check_initialization_params(attr=method, accepted_list=["generic", "ecfp"])
+def calculate_butina_distance_matrix(
+    data: np.array, model_name: str, distance_metric: str
+):
+    if model_name == "ecfp":
+        if distance_metric != "tanimoto":
+            distance_metric = "tanimoto"
+            message = (
+                "For ecfp distance matrix calculation, only tanimoto is supported."
+                "Hence, distance_metric changed to tanimoto"
+            )
+            logger.info(message)
 
-    if method == "ecfp" and distance_metric != "tanimoto":
-        distance_metric = "tanimoto"
-        message = (
-            "For ecfp distance matrix calculation, only tanimoto is supported."
-            "Hence, distance_metric changec to tanimoto"
-        )
-        logger.info(message)
-
-    if method == "generic":
-        nfps = data.shape[0]
-        distances = generic_distance_matrix(
-            x=data, metric=distance_metric, return_upper_tringular=True
-        )
-    elif method == "ecfp":
         nfps = len(data)
         distances = efcp_distance_matrix(
             ecfps=data, method="fast", return_upper_tringular=True
+        )
+
+    else:
+        if distance_metric == "tanimoto":
+            distance_metric = "euclidian"
+
+            message = (
+                "For non-ecfp distance matrix calculation, `tanimoto` metric "
+                "is not supported. Hence, distance_metric changed to euclidian."
+            )
+            logger.info(message)
+
+        nfps = data.shape[0]
+        distances = generic_distance_matrix(
+            x=data, metric=distance_metric, return_upper_tringular=True
         )
 
     return distances, nfps
@@ -42,7 +61,7 @@ def calculate_butina_distance_matrix(data: np.array, method: str, distance_metri
 
 def apply_butina(  # noqa: PLR0913
     data: np.array,
-    method: str = "generic",
+    model_name: str,
     distance_metric: str = "euclidian",
     threshold: float = 0.35,
     nfps: Optional[int] = None,
@@ -52,7 +71,7 @@ def apply_butina(  # noqa: PLR0913
 
     Args:
         data: Ecfp vector embeddings or distance matrix
-        method: Method to calculate distance matrix.
+        model_name: model that used to calculate distance matrix.
         distance_metric: Distance metric to calculate distance matrix.
         threshold: Threshold for butina clustering.
         nfps: Length of original data, not the distance matrix.
@@ -66,7 +85,7 @@ def apply_butina(  # noqa: PLR0913
 
     else:
         distances, nfps = calculate_butina_distance_matrix(
-            data=data, method=method, distance_metric=distance_metric
+            data=data, model_name=model_name, distance_metric=distance_metric
         )
 
     # TODO: Add distFunc=distance_metric as function

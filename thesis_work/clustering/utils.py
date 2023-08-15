@@ -28,9 +28,11 @@ def generic_distance_matrix(
         return pdist(X=x, metric=metric)
 
         ## NOTE: Allocates full array, which is unnecessary for only upper triangular matrix
+        # And using this somehow increasing running time of butina clustering 5 times,
+        # even though matrices are the same.
         # distance_matrix = pairwise_distances(X=x, metric=metric)
         # upper_indices = np.triu_indices(distance_matrix.shape[0], k=1)
-        # result = distance_matrix[upper_indices]
+        # return distance_matrix[upper_indices]
 
     else:
         return pairwise_distances(X=x, metric=metric)

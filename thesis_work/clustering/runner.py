@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Optional
 
+import numpy as np
 import pandas as pd
 
 import wandb
@@ -182,22 +183,19 @@ class ClusterRunner:
             init_params=self.clustering_method_kwargs,
         )
 
-        if self.clustering_method == "BUTINA":
-            if self.model_name == "ecfp":
-                distance_method = self.clustering_method_kwargs.get("method", None)
-                if distance_method != "ecfp":
-                    self.clustering_method_kwargs["method"] = "ecfp"
-                    logger.info("Setting BUTINA method to `ecfp`")
+        if (
+            self.clustering_method == "BUTINA"
+            and self.model_name == "ecfp"
+            and self.dimensionality_reduction_func is not None
+        ):
+            self.dimensionality_reduction_func = None
 
-                if self.dimensionality_reduction_func is not None:
-                    self.dimensionality_reduction_func = None
+            message = (
+                "Disabling dimensionality reduction, since it is not working "
+                "for BUTINA clustering with ecfp model"
+            )
 
-                    message = (
-                        "Disabling dimensionality reduction, since it is not working "
-                        "for BUTINA clustering with ecfp model"
-                    )
-
-                    logger.info(message)
+            logger.info(message)
 
         check_initialization_params(
             attr=self.clustering_evaluation_method,
@@ -253,16 +251,26 @@ class ClusterRunner:
             self.dimensionality_reduction_flag = True
 
     def _run_butina_distance_matrix(self) -> None:
+        """
+        NOTE
+            - Needs ecfp vector embeddings as ExplicitBitVect, not numpy array
+        """
+
         if self.distance_matrix is not None:
             return
 
-        method = self.clustering_method_kwargs.get("method", "generic")
-        distance_metric = self.clustering_method_kwargs.get(
-            "distance_metric", "euclidian"
-        )
+        distance_metric = self.clustering_method_kwargs.get("distance_metric", None)
+
+        distance_matrix_kwargs = {
+            "data": self.vector_embeddings,
+            "model_name": self.model_name,
+        }
+
+        if distance_metric is not None:
+            distance_matrix_kwargs["distance_metric"] = distance_metric
 
         self.distance_matrix, nfps = calculate_butina_distance_matrix(
-            data=self.vector_embeddings, method=method, distance_metric=distance_metric
+            **distance_matrix_kwargs
         )
 
         self.clustering_method_kwargs["nfps"] = nfps
@@ -272,22 +280,26 @@ class ClusterRunner:
         self.run_vector_embeddings()
         self.run_dimensionality_reduction()
 
-        clustering_data = self.vector_embeddings
+        clustering_kwargs = self.clustering_method_kwargs
+        clustering_kwargs["data"] = self.vector_embeddings
 
         # Don't calculate distance matrix each time
         if self.clustering_method == "BUTINA":
             self._run_butina_distance_matrix()
-            clustering_data = self.distance_matrix
+            clustering_kwargs["data"] = self.distance_matrix
+            clustering_kwargs["model_name"] = self.model_name
 
-        cluster_labels, inertia = self.clustering_func(
-            data=clustering_data, **self.clustering_method_kwargs
-        )
+            # NOTE: Ecfp vector embeddings don't work with cuml silhoutte since they are list
+            self.vector_embeddings = np.array(self.vector_embeddings, dtype=np.float32)
+
+        cluster_labels, inertia = self.clustering_func(**clustering_kwargs)
         cluster_evaluation_func = clustering_evaluation_method_mapping[
             self.clustering_evaluation_method
         ]
-
         score = cluster_evaluation_func(
-            target=self.vector_embeddings, labels=cluster_labels, device=self.device
+            target=np.array(self.vector_embeddings, dtype=np.float32),
+            labels=cluster_labels,
+            device=self.device,
         )
 
         if self.clustering_method == "K-MEANS":
@@ -376,6 +388,7 @@ class ClusterRunner:
 
 if __name__ == "__main__":
     import os
+    import time
 
     import pandas as pd
 
@@ -389,7 +402,7 @@ if __name__ == "__main__":
     random_state = 42
     device = "cuda"
 
-    each_sample_size = 4000
+    each_sample_size = 1000
     protein_types = ["gpcr", "kinase", "protease"]
     protein_types.sort()
     protein_labels = list(range(len(protein_types)))
@@ -419,21 +432,19 @@ if __name__ == "__main__":
         "metric": "euclidean",
     }
 
-    clustering_method = "K-MEANS"
-    clustering_method_kwargs = {
-        "init_method": "k-means++",
-        "n_clusters": 3,
-        "n_init": 1,
-    }
-
-    # clustering_method = "BUTINA"
+    # clustering_method = "K-MEANS"
     # clustering_method_kwargs = {
-    #     # "method": "ecfp", # NOTE: Should match with model name
-    #     # "distance_metric": "tanimoto",
-    #     "method": "generic",
-    #     "distance_metric": "euclidean",
-    #     "threshold": 0.35,
+    #     "init_method": "k-means++",
+    #     "n_clusters": 3,
+    #     "n_init": 1,
     # }
+
+    clustering_method = "BUTINA"
+    clustering_method_kwargs = {
+        # "distance_metric": "tanimoto",
+        "distance_metric": "euclidean",
+        "threshold": 0.35,
+    }
 
     # wandb_run_name = None
     wandb_run_name = f"""
@@ -475,8 +486,10 @@ if __name__ == "__main__":
     # min_samples = None
     min_samples = [10, 20]
 
-    min_cluster_sizes = None
-    # min_cluster_sizes = [5, 10]
+    # min_cluster_sizes = None
+    min_cluster_sizes = [5, 10]
+
+    start_time = time.time()
 
     cluster_runner.run_clustering()
     # cluster_runner.run_multiple_clustering(
@@ -484,3 +497,6 @@ if __name__ == "__main__":
     #     thresholds=thresholds,
     #     min_cluster_sizes=min_cluster_sizes,
     # )
+
+    end_time = time.time()
+    logger.info(f"Time taken: {end_time - start_time}")

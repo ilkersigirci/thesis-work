@@ -286,7 +286,9 @@ class ClusterRunner:
             self.clustering_evaluation_method
         ]
 
-        score = cluster_evaluation_func(self.vector_embeddings, cluster_labels)
+        score = cluster_evaluation_func(
+            target=self.vector_embeddings, labels=cluster_labels, device=self.device
+        )
 
         if self.clustering_method == "K-MEANS":
             wandb.log(
@@ -417,14 +419,21 @@ if __name__ == "__main__":
         "metric": "euclidean",
     }
 
-    clustering_method = "BUTINA"
+    clustering_method = "K-MEANS"
     clustering_method_kwargs = {
-        # "method": "ecfp", # NOTE: Should match with model name
-        # "distance_metric": "tanimoto",
-        "method": "generic",
-        "distance_metric": "euclidean",
-        "threshold": 0.35,
+        "init_method": "k-means++",
+        "n_clusters": 3,
+        "n_init": 1,
     }
+
+    # clustering_method = "BUTINA"
+    # clustering_method_kwargs = {
+    #     # "method": "ecfp", # NOTE: Should match with model name
+    #     # "distance_metric": "tanimoto",
+    #     "method": "generic",
+    #     "distance_metric": "euclidean",
+    #     "threshold": 0.35,
+    # }
 
     # wandb_run_name = None
     wandb_run_name = f"""

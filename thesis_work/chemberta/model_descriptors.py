@@ -6,6 +6,9 @@ import torch
 from simpletransformers.language_representation import RepresentationModel
 from transformers import RobertaModel, RobertaTokenizer, RobertaTokenizerFast
 
+from thesis_work.initialization_utils import check_initialization_params
+from thesis_work.utils import check_device
+
 
 def initialize_model_tokenizer(model_name: str = "DeepChem/ChemBERTa-77M-MLM"):
     # tokenizer = RobertaTokenizerFast.from_pretrained('seyonec/PubChem10M_SMILES_BPE_450k')
@@ -67,6 +70,7 @@ def get_model_descriptors(
     model_name: str = "DeepChem/ChemBERTa-77M-MLM",
     method: str = "simpletransformers",
     combine_strategy: str = "mean",
+    device: str = "cuda",
 ) -> np.array:
     """Calculates and returns model vector embedding for given smiles list.
 
@@ -80,14 +84,16 @@ def get_model_descriptors(
         - For 68,000 compounds with method: simpletransformers it takes:
             - 19s on GPU
             - 4m 23 on CPU
-        - For simpletransformers methods, returninng `tolist()` is important hence, we
+        - For simpletransformers methods, returning `tolist()` is important hence, we
         embed them in dataframe.
     """
 
-    if method not in ["manual", "simpletransformers"]:
-        raise ValueError("method must be either manual or simpletransformers")
+    check_device(device=device)
+    use_cuda = device == "cuda"
 
-    cuda_available = torch.cuda.is_available()
+    check_initialization_params(
+        attr=method, accepted_list=["manual", "simpletransformers"]
+    )
 
     if method == "manual":
         model, tokenizer = initialize_model_tokenizer(model_name)
@@ -95,15 +101,13 @@ def get_model_descriptors(
         return smiles_series.apply(
             lambda x: get_model_descriptor(
                 model=model, tokenizer=tokenizer, smiles_str=x
-            )  # .tolist()
+            )
         )
     elif method == "simpletransformers":
         model = RepresentationModel(
-            model_type="roberta", model_name=model_name, use_cuda=cuda_available
+            model_type="roberta", model_name=model_name, use_cuda=use_cuda
         )
-        return model.encode_sentences(
-            smiles_series, combine_strategy=combine_strategy
-        )  # .tolist()
+        return model.encode_sentences(smiles_series, combine_strategy=combine_strategy)
 
 
 # Mean Pooling - Take attention mask into account for correct averaging

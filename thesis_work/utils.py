@@ -1,5 +1,5 @@
 import logging
-from typing import List, Union
+from typing import List, Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,6 +14,32 @@ from rdkit.DataStructs.cDataStructs import ExplicitBitVect
 from thesis_work.initialization_utils import check_initialization_params
 
 logger = logging.getLogger(__name__)
+
+
+def thread_pool_info():
+    import numpy  # noqa: F401
+    from threadpoolctl import threadpool_info
+
+    logger.info(threadpool_info())
+
+
+def limit_numpy_num_threads(num_threads: Optional[int] = None) -> None:
+    """Limits total number of threads used by numpy.
+
+    Need to be set before importing numpy. This is alternative for `threadpool_limits`.
+    Try using `threadpool_limits` method first.
+    """
+    if num_threads is None:
+        return
+
+    import os
+
+    num_threads = str(num_threads)
+    os.environ["OMP_NUM_THREADS"] = num_threads
+    os.environ["OPENBLAS_NUM_THREADS"] = num_threads
+    os.environ["MKL_NUM_THREADS"] = num_threads
+    os.environ["VECLIB_MAXIMUM_THREADS"] = num_threads
+    os.environ["NUMEXPR_NUM_THREADS"] = num_threads
 
 
 def initialize_logger(logging_level: int = logging.INFO):

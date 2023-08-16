@@ -4,6 +4,7 @@ from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
+from threadpoolctl import threadpool_limits
 
 import wandb
 from thesis_work import LIBRARY_ROOT_PATH
@@ -68,6 +69,7 @@ class ClusterRunner:
         clustering_method: str = "K-MEANS",
         clustering_method_kwargs: Optional[Dict] = None,
         clustering_evaluation_method: str = "silhouette",
+        num_threads: Optional[int] = None,
     ):
         self.wandb_project_name = wandb_project_name
         self.wandb_run_name = wandb_run_name
@@ -86,6 +88,7 @@ class ClusterRunner:
         self.clustering_method = clustering_method.upper()
         self.clustering_method_kwargs = clustering_method_kwargs or {}
         self.clustering_evaluation_method = clustering_evaluation_method
+        self.num_threads = num_threads
 
         self._init_checks()
 
@@ -218,6 +221,7 @@ class ClusterRunner:
                 smiles_series=self.smiles_df["text"],
                 model_name=self.model_name,
                 method="simpletransformers",
+                device=self.device,
             )
         elif self.model_name == "chemprop":
             self.vector_embeddings = get_model_descriptors_chemprop(
@@ -276,7 +280,7 @@ class ClusterRunner:
         self.clustering_method_kwargs["nfps"] = nfps
         self.clustering_method_kwargs["is_distance_matrix"] = True
 
-    def run_clustering(self):
+    def _run_clustering(self):
         self.run_vector_embeddings()
         self.run_dimensionality_reduction()
 
@@ -340,6 +344,13 @@ class ClusterRunner:
                 },
                 # step=self.clustering_method_kwargs["min_cluster_size"],
             )
+
+    def run_clustering(self):
+        if self.num_threads is not None:
+            with threadpool_limits(limits=self.num_threads, user_api="blas"):
+                self._run_clustering()
+        else:
+            self._run_clustering()
 
     def run_multiple_clustering(  # noqa: C901
         self,

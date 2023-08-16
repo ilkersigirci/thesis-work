@@ -69,10 +69,10 @@ def check_device(device: str = "cuda"):
 def log_plotly_figure(figure, name: str):
     table = wandb.Table(columns=["plotly_figure"])
     path_to_plotly_html = "./plotly_figure.html"
-    figure_html = figure.to_html(path_to_plotly_html, auto_play=False)
 
     # NOTE: Doesn't work because of utf-8 encoding problem in wandb
     # figure.write_html(path_to_plotly_html, auto_play=False)
+    figure_html = figure.to_html(path_to_plotly_html, auto_play=False)
 
     table.add_data(wandb.Html(figure_html, inject=True))
     wandb.log({name: table})

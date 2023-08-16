@@ -287,8 +287,15 @@ class ClusterRunner:
         self.vector_embeddings = np.array(self.vector_embeddings, dtype=np.float32)
 
     def log_umap_2D(
-        self, data: np.array, labels: pd.Series, log_name: str, legend_title: str
+        self,
+        data: np.array,
+        calculated_labels: pd.Series,
+        original_labels: Optional[pd.Series] = None,
     ) -> None:
+        legend_title = "Protein Family"
+        original_log_name = "Original Labels"
+        cluster_log_name = "Cluster Labels"
+
         umap_output = apply_umap(
             data=data,
             n_components=2,
@@ -299,18 +306,28 @@ class ClusterRunner:
             device=self.device,
         )
 
-        umap_2d_data = pd.DataFrame(
-            {"labels": labels, "X": umap_output[:, 0], "Y": umap_output[:, 1]},
-            index=labels.index,
+        umap_2d_original_data = pd.DataFrame(
+            {"labels": original_labels, "X": umap_output[:, 0], "Y": umap_output[:, 1]},
+            index=original_labels.index,
         )
 
-        umap_2d_figure = plot_umap(
-            data=umap_2d_data,
+        umap_2d_original_figure = plot_umap(
+            data=umap_2d_original_data,
             plot_title=None,
             legend_title=legend_title,
             method="plotly",
         )
-        log_plotly_figure(figure=umap_2d_figure, name=log_name)
+        log_plotly_figure(figure=umap_2d_original_figure, name=original_log_name)
+
+        umap_2d_original_data["labels"] = calculated_labels
+
+        umap_2d_calculated_figure = plot_umap(
+            data=umap_2d_original_data,
+            plot_title=None,
+            legend_title=legend_title,
+            method="plotly",
+        )
+        log_plotly_figure(figure=umap_2d_calculated_figure, name=cluster_log_name)
 
     def evaluate_clusters(
         self, cluster_labels: np.array, inertia: Optional[float] = None
@@ -381,14 +398,12 @@ class ClusterRunner:
         self.run_vector_embeddings()
         self.run_dimensionality_reduction()
 
-        # FIXME: If labels not present, this won't work
-        # FIXME: legend_title should be different for active-inactive datasets
-        self.log_umap_2D(
-            data=self.vector_embeddings,
-            labels=self.smiles_df["labels"],
-            log_name="Original Labels",
-            legend_title="Protein Family",
-        )
+        # self.log_umap_2D(
+        #     data=self.vector_embeddings,
+        #     labels=self.smiles_df["labels"],
+        #     log_name="Original Labels",
+        #     legend_title="Protein Family",
+        # )
 
         clustering_kwargs = self.clustering_method_kwargs
         clustering_kwargs["data"] = self.vector_embeddings
@@ -403,13 +418,13 @@ class ClusterRunner:
 
         self.evaluate_clusters(cluster_labels=cluster_labels, inertia=inertia)
 
-        # Log with cluster labels
+        # FIXME: If labels not present, this won't work
+        # FIXME: legend_title should be different for active-inactive datasets
         cluster_labels = pd.Series(cluster_labels, name="labels")
         self.log_umap_2D(
             data=self.vector_embeddings,
-            labels=cluster_labels,
-            log_name="Cluster Labels",
-            legend_title="Protein Family",
+            original_labels=self.smiles_df["labels"],
+            calculated_labels=cluster_labels,
         )
 
     def run_clustering(self):

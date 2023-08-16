@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     ## To disable all wandb logging
-    # os.environ["WANDB_MODE"] = "disabled"
+    os.environ["WANDB_MODE"] = "disabled"
 
     wandb_project_name = "generic-test"
 

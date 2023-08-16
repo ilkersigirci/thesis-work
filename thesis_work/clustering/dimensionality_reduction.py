@@ -103,7 +103,6 @@ def apply_umap(  # noqa: PLR0913
         n_components=n_components,
         min_dist=min_dist,
         metric=metric,
-        # metric="jaccard",
         random_state=random_state,
     )
 

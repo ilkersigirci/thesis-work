@@ -63,7 +63,7 @@ matplotlib = "^3.7.1"
 regex = "^2022.10.31"
 transformers = "4.30.2" # NOTE: Fix for `No module named 'transformers.models.mmbt'`
 simpletransformers = "^0.63.11"
-wandb = "^0.13.11"
+wandb = "^0.15.8"
 bertviz = "^1.4.0"
 # apex = {git = "https://github.com/NVIDIA/apex.git", branch = "master"}
 numpy = "1.21.6" # NOTE: Only needed for `chemberta.load_molnet_dataset`
@@ -96,6 +96,7 @@ ucx-py-cu11 = { url = "https://pypi.nvidia.com/ucx-py-cu11/ucx_py_cu11-0.31.1-cp
 # python-utils = "^3.7.0"
 chemprop = "^1.6.1"
 mols2grid = "^2.0.0"
+plotly = "^5.16.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.1.2"

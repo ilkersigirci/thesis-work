@@ -20,12 +20,27 @@ def transform_bbbp():
 
 
 def load_data(
-    protein_type: str = "kinase", subfolder: str = "original"
+    protein_type: str = "kinase",
+    subfolder: str = "original",
+    sample_size: Optional[int] = None,
+    random_state: int = 42,
+    interacted_only: bool = False,
 ) -> pd.DataFrame:
     """ "Loads data"""
     data_path = DATA_PATH / subfolder / f"{protein_type}.csv"
     df = pd.read_csv(data_path)
     df.columns = ["text", "labels"]
+
+    if interacted_only is True:
+        df = df[df["labels"] == 1]
+
+    if sample_size is not None:
+        if len(df) < sample_size:
+            logger.warning(
+                f"Sample size is {sample_size} is greater than number of data is {len(df)}."
+            )
+
+        df = df.sample(n=sample_size, random_state=random_state)
 
     return df
 
@@ -36,19 +51,11 @@ def save_data(df: pd.DataFrame, name: str, subfolder: str = "result_data"):
     df.to_csv(data_path, index=False)
 
 
-def load_interacted_compounds(protein_type: str = "kinase") -> pd.DataFrame:
-    """ "Loads data which only has interacted compounds"""
-    df = load_data(protein_type=protein_type)
-    df = df[df["labels"] == 1]
-
-    return df
-
-
 def load_mixed_interacted_compounds(
     protein_types: Optional[List[str]] = None,
     each_sample_size: int = 1000,
     random_state: int = 42,
-    convert_category: bool = True,
+    convert_labels: bool = False,
 ) -> pd.DataFrame:
     """
     Loads interactive compounds from multiple protein types.
@@ -62,21 +69,20 @@ def load_mixed_interacted_compounds(
     protein_types.sort()
 
     for protein_type in protein_types:
-        data = load_interacted_compounds(protein_type=protein_type)
-
-        if len(data) < each_sample_size:
-            message = (
-                f"Number of interacted compounds for {protein_type} is {len(data)},"
-                f" and it is  less than {each_sample_size}"
-            )
-            logger.warning(message)
-
-        data = data.sample(n=each_sample_size, random_state=random_state)
-        data = data.assign(labels=protein_type)
+        data = load_data(
+            protein_type=protein_type,
+            sample_size=each_sample_size,
+            random_state=random_state,
+            interacted_only=True,
+        )
+        # data["labels"] = index
+        # data["labels_protein"] = protein_type
+        data["labels"] = protein_type
         result = pd.concat([result, data], axis=0, ignore_index=True)
 
-    if convert_category is True:
-        result["labels"] = result["labels"].astype("category").cat.codes
+    if convert_labels is True:
+        # result["labels_protein"] = result["labels"].astype("category").cat.codes
+        result["labels_protein"] = pd.factorize(result["labels"])[0]
 
     return result
 

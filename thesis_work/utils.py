@@ -11,6 +11,7 @@ from rdkit.Chem import AllChem
 from rdkit.Chem.MolStandardize.rdMolStandardize import LargestFragmentChooser
 from rdkit.DataStructs.cDataStructs import ExplicitBitVect
 
+import wandb
 from thesis_work.initialization_utils import check_initialization_params
 
 logger = logging.getLogger(__name__)
@@ -63,6 +64,18 @@ def check_device(device: str = "cuda"):
 
     if device == "cuda" and not torch.cuda.is_available():
         raise ValueError("cuda device requires GPU")
+
+
+def log_plotly_figure(figure, name: str):
+    table = wandb.Table(columns=["plotly_figure"])
+    path_to_plotly_html = "./plotly_figure.html"
+    figure_html = figure.to_html(path_to_plotly_html, auto_play=False)
+
+    # NOTE: Doesn't work because of utf-8 encoding problem in wandb
+    # figure.write_html(path_to_plotly_html, auto_play=False)
+
+    table.add_data(wandb.Html(figure_html, inject=True))
+    wandb.log({name: table})
 
 
 def is_valid_smiles(smiles: str) -> bool:
@@ -148,6 +161,9 @@ def get_ecfp_descriptors(
     # descriptors = vectorized_function(smiles_series.to_numpy(), radius, nBits)
 
     return descriptors
+
+
+#######################################################################################
 
 
 def get_largest_fragment_from_smiles(s: str):

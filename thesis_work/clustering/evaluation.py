@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from cuml.metrics.cluster import (
     adjusted_rand_score as cuml_adjusted_rand_score,
     silhouette_score as cuml_silhouette_score,
@@ -10,6 +12,13 @@ from sklearn.metrics import (
 )
 
 from thesis_work.utils import check_device
+
+
+@dataclass
+class EvaluationMetric:
+    name: str
+    function: callable
+    need_true_labels: bool
 
 
 def adjusted_rand_index(target, labels, device="cuda"):

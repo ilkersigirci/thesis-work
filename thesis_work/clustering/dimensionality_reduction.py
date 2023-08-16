@@ -4,6 +4,7 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import plotly.express as px
 import seaborn as sns
 import torch
 from cuml import PCA as pca_gpu, UMAP as umap_gpu
@@ -11,6 +12,7 @@ from sklearn.decomposition import PCA as pca_cpu
 from umap import UMAP as umap_cpu
 
 import wandb
+from thesis_work.initialization_utils import check_initialization_params
 from thesis_work.utils import check_device
 
 logger = logging.getLogger(__name__)
@@ -110,24 +112,48 @@ def apply_umap(  # noqa: PLR0913
 
 def plot_umap(
     data: pd.DataFrame,
-    labels: np.array,
-    legend_title: str,
     plot_title: Optional[str] = None,
-) -> None:
-    """Plot UMAP."""
-    palette = sns.color_palette("bright", 3)
-
-    plt.figure(figsize=(8, 8))
-    _ = sns.scatterplot(
-        data=data,
-        x="X",
-        y="Y",
-        hue="labels",
-        alpha=0.5,
-        palette=palette,
+    legend_title: str = "Protein Family",
+    method="plotly",
+):
+    check_initialization_params(
+        attr=method, accepted_list=["plotly", "matplotlib", "seaborn"]
     )
-    if plot_title is not None:
-        plt.title(plot_title)
+    if set(data.columns) != {"X", "Y", "labels"}:
+        raise ValueError("data columns must be ['X', 'Y', 'labels']")
 
-    plt.legend(title=legend_title, loc="upper right", labels=labels)
-    plt.show()
+    if method == "plotly":
+        fig = px.scatter(data_frame=data, x="X", y="Y", color="labels", opacity=0.8)
+        fig.update_layout(legend_title=legend_title)
+
+    elif method == "matplotlib":
+        fig = plt.scatter(
+            data[:, 0], data[:, 1], c=data["labels"], s=0.1, cmap="Spectral"
+        )
+
+        if plot_title is not None:
+            plt.title(plot_title)
+
+        plt.legend(title=legend_title, loc="upper right", labels=data["labels"])
+
+    elif method == "seaborn":
+        unique_labels = data["labels"].unique().shape[0]
+        palette = sns.color_palette("bright", unique_labels)
+
+        # Seaborn way
+        fig = plt.figure(figsize=(8, 8))
+        _ = sns.scatterplot(
+            data=data,
+            x="X",
+            y="Y",
+            hue="labels",
+            alpha=0.5,
+            palette=palette,
+        )
+        if plot_title is not None:
+            plt.title(plot_title)
+
+        plt.legend(title=legend_title, loc="upper right", labels=data["labels"])
+        # plt.show()
+
+    return fig

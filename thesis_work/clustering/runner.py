@@ -16,8 +16,13 @@ from thesis_work.chemprop.model_descriptors import (
 )
 from thesis_work.clustering.butina import apply_butina, calculate_butina_distance_matrix
 from thesis_work.clustering.dbscan import apply_hdbscan  # apply_dbscan
-from thesis_work.clustering.dimensionality_reduction import apply_pca, apply_umap
+from thesis_work.clustering.dimensionality_reduction import (
+    apply_pca,
+    apply_umap,
+    plot_umap,
+)
 from thesis_work.clustering.evaluation import (
+    EvaluationMetric,
     adjusted_rand_index,
     silhouette_index,
 )
@@ -25,8 +30,9 @@ from thesis_work.clustering.k_means import apply_k_means
 from thesis_work.initialization_utils import (
     check_function_init_params,
     check_initialization_params,
+    get_function_defaults,
 )
-from thesis_work.utils import check_device, get_ecfp_descriptors
+from thesis_work.utils import check_device, get_ecfp_descriptors, log_plotly_figure
 
 # from thesis_work.clustering.evaluation import davies_bouldin_index, rand_index
 
@@ -45,12 +51,16 @@ clustering_algorithm_mapping = {
     # "WARD": None,
 }
 
-clustering_evaluation_method_mapping = {
-    "silhouette": silhouette_index,
-    "adjusted-rand-index": adjusted_rand_index,
-    # "davies-bouldin": None,
-    # "quality-partition-index": None,
-}
+clustering_evaluation_methods = [
+    EvaluationMetric(
+        name="silhouette", function=silhouette_index, need_true_labels=False
+    ),
+    EvaluationMetric(
+        name="adjusted-rand-index", function=adjusted_rand_index, need_true_labels=True
+    ),
+    # EvaluationMetric(name="davies-bouldin", function=davies_bouldin_index, need_true_labels=False),
+    # EvaluationMetric(name="quality-partition-index", function=quality_partition_index, need_true_labels=True),
+]
 
 
 class ClusterRunner:
@@ -68,7 +78,6 @@ class ClusterRunner:
         dimensionality_reduction_method_kwargs: Optional[Dict] = None,
         clustering_method: str = "K-MEANS",
         clustering_method_kwargs: Optional[Dict] = None,
-        clustering_evaluation_method: str = "silhouette",
         num_threads: Optional[int] = None,
     ):
         self.wandb_project_name = wandb_project_name
@@ -87,7 +96,6 @@ class ClusterRunner:
         )
         self.clustering_method = clustering_method.upper()
         self.clustering_method_kwargs = clustering_method_kwargs or {}
-        self.clustering_evaluation_method = clustering_evaluation_method
         self.num_threads = num_threads
 
         self._init_checks()
@@ -200,11 +208,6 @@ class ClusterRunner:
 
             logger.info(message)
 
-        check_initialization_params(
-            attr=self.clustering_evaluation_method,
-            accepted_list=list(clustering_evaluation_method_mapping.keys()),
-        )
-
     def run_vector_embeddings(self):
         """
         # TODO:
@@ -280,9 +283,112 @@ class ClusterRunner:
         self.clustering_method_kwargs["nfps"] = nfps
         self.clustering_method_kwargs["is_distance_matrix"] = True
 
+        # NOTE: Ecfp vector embeddings don't work with cuml silhoutte since they are list
+        self.vector_embeddings = np.array(self.vector_embeddings, dtype=np.float32)
+
+    def log_umap_2D(
+        self, data: np.array, labels: pd.Series, log_name: str, legend_title: str
+    ) -> None:
+        umap_output = apply_umap(
+            data=data,
+            n_components=2,
+            n_neighbors=15,
+            min_dist=0.1,
+            metric="euclidean",
+            random_state=self.random_state,
+            device=self.device,
+        )
+
+        umap_2d_data = pd.DataFrame(
+            {"labels": labels, "X": umap_output[:, 0], "Y": umap_output[:, 1]},
+            index=labels.index,
+        )
+
+        umap_2d_figure = plot_umap(
+            data=umap_2d_data,
+            plot_title=None,
+            legend_title=legend_title,
+            method="plotly",
+        )
+        log_plotly_figure(figure=umap_2d_figure, name=log_name)
+
+    def evaluate_clusters(
+        self, cluster_labels: np.array, inertia: Optional[float] = None
+    ) -> None:
+        """In silhouete score: target: vector_embeddings, labels: cluster_labels
+        In adjusted rand index: target: smiles_df["labels"], labels: cluster_labels
+        """
+        is_true_labels_present = "labels" in self.smiles_df.columns
+
+        for clustering_evaluation_method in clustering_evaluation_methods:
+            if not clustering_evaluation_method.need_true_labels:
+                target = self.vector_embeddings
+            else:
+                if not is_true_labels_present:
+                    logger.info(
+                        f"Skipping calculating {clustering_evaluation_method} since "
+                        "true labels are not present in data"
+                    )
+                    continue
+
+                target = self.smiles_df["labels"]
+
+                # Convert labels to numeric
+                if target.dtype == "object":
+                    target = pd.factorize(target)[0]
+
+            score = clustering_evaluation_method.function(
+                target=target,
+                labels=cluster_labels,
+                device=self.device,
+            )
+
+            logged_data = {clustering_evaluation_method.name: score}
+
+            extra_logged_data_mapping = {
+                "K-MEANS": "n_clusters",
+                "BUTINA": "threshold",
+                "DBSCAN": "min_samples",
+                "HDBSCAN": "min_cluster_size",
+            }
+
+            if inertia is not None:
+                logged_data["inertia"] = inertia
+
+            if self.clustering_method not in extra_logged_data_mapping:
+                raise ValueError(
+                    f"Extra logged data mapping not present for {self.clustering_method}"
+                )
+
+            # logged_data.update(extra_logged_data_mapping[self.clustering_method])
+            added_key = extra_logged_data_mapping[self.clustering_method]
+            added_value = self.clustering_method_kwargs.get(added_key, None)
+
+            # NOTE: Get default values from function
+            if added_value is None:
+                added_value = get_function_defaults(function=self.clustering_func).get(
+                    added_key
+                )
+
+            logged_data[added_key] = added_value
+
+            wandb.log(
+                data=logged_data,
+                # step=self.clustering_method_kwargs["n_clusters"],
+            )
+
     def _run_clustering(self):
         self.run_vector_embeddings()
         self.run_dimensionality_reduction()
+
+        # FIXME: If labels not present, this won't work
+        # FIXME: legend_title should be different for active-inactive datasets
+        self.log_umap_2D(
+            data=self.vector_embeddings,
+            labels=self.smiles_df["labels"],
+            log_name="Original Labels",
+            legend_title="Protein Family",
+        )
 
         clustering_kwargs = self.clustering_method_kwargs
         clustering_kwargs["data"] = self.vector_embeddings
@@ -293,57 +399,18 @@ class ClusterRunner:
             clustering_kwargs["data"] = self.distance_matrix
             clustering_kwargs["model_name"] = self.model_name
 
-            # NOTE: Ecfp vector embeddings don't work with cuml silhoutte since they are list
-            self.vector_embeddings = np.array(self.vector_embeddings, dtype=np.float32)
-
         cluster_labels, inertia = self.clustering_func(**clustering_kwargs)
-        cluster_evaluation_func = clustering_evaluation_method_mapping[
-            self.clustering_evaluation_method
-        ]
-        score = cluster_evaluation_func(
-            target=np.array(self.vector_embeddings, dtype=np.float32),
+
+        self.evaluate_clusters(cluster_labels=cluster_labels, inertia=inertia)
+
+        # Log with cluster labels
+        cluster_labels = pd.Series(cluster_labels, name="labels")
+        self.log_umap_2D(
+            data=self.vector_embeddings,
             labels=cluster_labels,
-            device=self.device,
+            log_name="Cluster Labels",
+            legend_title="Protein Family",
         )
-
-        if self.clustering_method == "K-MEANS":
-            wandb.log(
-                data={
-                    f"{self.clustering_evaluation_method}_score": score,
-                    "inertia": inertia,
-                    "n_clusters": self.clustering_method_kwargs["n_clusters"],
-                },
-                # step=self.clustering_method_kwargs["n_clusters"],
-            )
-
-        elif self.clustering_method == "BUTINA":
-            wandb.log(
-                data={
-                    f"{self.clustering_evaluation_method}_score": score,
-                    "threshold": self.clustering_method_kwargs["threshold"],
-                },
-                # step=self.clustering_method_kwargs["threshold"],
-            )
-
-        elif self.clustering_method == "DBSCAN":
-            wandb.log(
-                data={
-                    f"{self.clustering_evaluation_method}_score": score,
-                    "min_samples": self.clustering_method_kwargs["min_samples"],
-                },
-                # step=self.clustering_method_kwargs["min_samples"],
-            )
-
-        elif self.clustering_method == "HDBSCAN":
-            wandb.log(
-                data={
-                    f"{self.clustering_evaluation_method}_score": score,
-                    "min_cluster_size": self.clustering_method_kwargs[
-                        "min_cluster_size"
-                    ],
-                },
-                # step=self.clustering_method_kwargs["min_cluster_size"],
-            )
 
     def run_clustering(self):
         if self.num_threads is not None:
@@ -398,116 +465,4 @@ class ClusterRunner:
 
 
 if __name__ == "__main__":
-    import os
-    import time
-
-    import pandas as pd
-
-    from thesis_work.data import load_mixed_interacted_compounds
-
-    ## To disable all wandb logging
-    os.environ["WANDB_MODE"] = "disabled"
-
-    wandb_project_name = "clustering-class-test"
-
-    random_state = 42
-    device = "cuda"
-
-    each_sample_size = 1000
-    protein_types = ["gpcr", "kinase", "protease"]
-    protein_types.sort()
-    protein_labels = list(range(len(protein_types)))
-
-    smiles_df = load_mixed_interacted_compounds(
-        protein_types=protein_types,
-        each_sample_size=each_sample_size,
-        random_state=random_state,
-        convert_category=True,
-    )
-
-    model_name = "DeepChem/ChemBERTa-77M-MTR"
-    # model_name = "DeepChem/ChemBERTa-77M-MLM"
-    # model_name = "ecfp"
-    # model_name = "chemprop"
-
-    n_components = 25
-
-    # dimensionality_reduction_method = None
-    # dimensionality_reduction_method_kwargs = None
-
-    dimensionality_reduction_method = "UMAP"
-    dimensionality_reduction_method_kwargs = {
-        "n_components": n_components,
-        "n_neighbors": 15,
-        "min_dist": 0.1,
-        "metric": "euclidean",
-    }
-
-    # clustering_method = "K-MEANS"
-    # clustering_method_kwargs = {
-    #     "init_method": "k-means++",
-    #     "n_clusters": 3,
-    #     "n_init": 1,
-    # }
-
-    clustering_method = "BUTINA"
-    clustering_method_kwargs = {
-        # "distance_metric": "tanimoto",
-        "distance_metric": "euclidean",
-        "threshold": 0.35,
-    }
-
-    # wandb_run_name = None
-    wandb_run_name = f"""
-        {clustering_method}_
-        {model_name if "/" not in model_name else model_name.split("/")[1]}
-    """
-
-    if dimensionality_reduction_method is not None:
-        wandb_run_name += f"_{dimensionality_reduction_method}"
-
-    if dimensionality_reduction_method_kwargs is not None:
-        wandb_run_name += f"_{dimensionality_reduction_method_kwargs['n_components']}"
-
-    # wandb_extra_configs = None
-    wandb_extra_configs = {"proteins": protein_types}
-
-    cluster_runner = ClusterRunner(
-        wandb_project_name=wandb_project_name,
-        wandb_run_name=wandb_run_name,
-        wandb_extra_configs=wandb_extra_configs,
-        smiles_df=smiles_df,
-        # smiles_df_path = None,
-        model_name=model_name,
-        random_state=random_state,
-        device=device,
-        dimensionality_reduction_method=dimensionality_reduction_method,
-        dimensionality_reduction_method_kwargs=dimensionality_reduction_method_kwargs,
-        clustering_method=clustering_method,
-        clustering_method_kwargs=clustering_method_kwargs,
-        clustering_evaluation_method="silhouette",
-    )
-
-    # n_clusters = None
-    n_clusters = list(range(2, 100, 3))
-
-    # thresholds = None
-    thresholds = [0.2, 0.35, 0.5, 0.8]
-
-    # min_samples = None
-    min_samples = [10, 20]
-
-    # min_cluster_sizes = None
-    min_cluster_sizes = [5, 10]
-
-    start_time = time.time()
-
-    cluster_runner.run_clustering()
-    # cluster_runner.run_multiple_clustering(
-    #     n_clusters=n_clusters,
-    #     thresholds=thresholds,
-    #     min_cluster_sizes=min_cluster_sizes,
-    # )
-
-    end_time = time.time()
-    logger.info(f"Time taken: {end_time - start_time}")
+    pass

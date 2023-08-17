@@ -1,3 +1,4 @@
+import io
 import logging
 from typing import List, Optional, Union
 
@@ -6,6 +7,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import torch
+from PIL import Image
 from rdkit import Chem, RDLogger
 from rdkit.Chem import AllChem
 from rdkit.Chem.MolStandardize.rdMolStandardize import LargestFragmentChooser
@@ -66,16 +68,26 @@ def check_device(device: str = "cuda"):
         raise ValueError("cuda device requires GPU")
 
 
-def log_plotly_figure(figure, name: str):
-    table = wandb.Table(columns=["plotly_figure"])
-    path_to_plotly_html = "./plotly_figure.html"
+def log_plotly_figure(figure, name: str, method="static"):
+    check_initialization_params(attr=method, accepted_list=["static", "dynamic"])
 
-    # NOTE: Doesn't work because of utf-8 encoding problem in wandb
-    # figure.write_html(path_to_plotly_html, auto_play=False)
-    figure_html = figure.to_html(path_to_plotly_html, auto_play=False)
+    if method == "static":
+        fig_bytes = figure.to_image(format="png", engine="kaleido")
+        img = Image.open(io.BytesIO(fig_bytes))
+        img = np.asarray(img)
 
-    table.add_data(wandb.Html(figure_html, inject=True))
-    wandb.log({name: table})
+        wandb.log({name: wandb.Image(img)})
+
+    elif method == "dynamic":
+        table = wandb.Table(columns=["plotly_figure"])
+        path_to_plotly_html = "./plotly_figure.html"
+
+        # NOTE: Doesn't work because of utf-8 encoding problem in wandb
+        # figure.write_html(path_to_plotly_html, auto_play=False)
+        figure_html = figure.to_html(path_to_plotly_html, auto_play=False)
+
+        table.add_data(wandb.Html(figure_html, inject=True))
+        wandb.log({name: table})
 
 
 def is_valid_smiles(smiles: str) -> bool:

@@ -313,23 +313,9 @@ class ClusterRunner:
                 legend_title=legend_title,
                 method=plot_method,
             )
-
-            if self.logged_plot_type == "static":
-                import io
-
-                from PIL import Image
-
-                if plot_method != "plotly":
-                    raise ValueError("Static logging only works with plotly")
-                fig_bytes = umap_2d_original_figure.to_image(
-                    format="png", engine="kaleido"
-                )
-                img = Image.open(io.BytesIO(fig_bytes))
-                img = np.asarray(img)
-
-                wandb.log({name: wandb.Image(img)})
-            elif self.logged_plot_type == "dynamic":
-                log_plotly_figure(figure=umap_2d_original_figure, name=name)
+            log_plotly_figure(
+                figure=umap_2d_original_figure, name=name, method=self.logged_plot_type
+            )
 
     def evaluate_clusters(
         self, cluster_labels: np.array, inertia: Optional[float] = None

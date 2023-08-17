@@ -267,6 +267,7 @@ cython_debug/
 
 data/*
 !data/original
+!data/related_work
 
 /.ruff_cache/
 public

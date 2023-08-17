@@ -5,31 +5,37 @@ import os
 import time
 
 from thesis_work.clustering.runner import ClusterRunner
-from thesis_work.data import load_mixed_interacted_compounds
+from thesis_work.data import load_mixed_interacted_compounds, load_related_work
 
 logger = logging.getLogger(__name__)
 
 
 def main():
     ## To disable all wandb logging
-    os.environ["WANDB_MODE"] = "disabled"
+    # os.environ["WANDB_MODE"] = "disabled"
 
-    wandb_project_name = "generic-test"
+    wandb_project_name = "related-work"
 
     num_threads = None
     random_state = 42
+    logged_plot_type = "static"
     device = "cuda"
 
-    each_sample_size = 1000
+    # sample_size = None
+    # sample_size = 10_000
+    sample_size = 25_000
+
     protein_types = ["gpcr", "kinase", "protease"]
     protein_types.sort()
 
-    smiles_df = load_mixed_interacted_compounds(
-        protein_types=protein_types,
-        each_sample_size=each_sample_size,
-        random_state=random_state,
-        convert_labels=False,
-    )
+    # smiles_df = load_mixed_interacted_compounds(
+    #     protein_types=protein_types,
+    #     each_sample_size=sample_size // len(protein_types),
+    #     random_state=random_state,
+    #     convert_labels=False,
+    # )
+
+    smiles_df = load_related_work(sample_size=sample_size, random_state=random_state)
 
     model_name = "DeepChem/ChemBERTa-77M-MTR"
     # model_name = "DeepChem/ChemBERTa-77M-MLM"
@@ -75,8 +81,8 @@ def main():
     if dimensionality_reduction_method_kwargs is not None:
         wandb_run_name += f"_{dimensionality_reduction_method_kwargs['n_components']}"
 
-    # wandb_extra_configs = None
-    wandb_extra_configs = {"proteins": protein_types}
+    wandb_extra_configs = None
+    # wandb_extra_configs = {"proteins": protein_types}
 
     cluster_runner = ClusterRunner(
         wandb_project_name=wandb_project_name,
@@ -92,6 +98,7 @@ def main():
         clustering_method=clustering_method,
         clustering_method_kwargs=clustering_method_kwargs,
         num_threads=num_threads,
+        logged_plot_type=logged_plot_type,
     )
 
     # n_clusters = None
@@ -108,12 +115,13 @@ def main():
 
     start_time = time.time()
 
-    cluster_runner.run_clustering()
-    # cluster_runner.run_multiple_clustering(
-    #     n_clusters=n_clusters,
-    #     thresholds=thresholds,
-    #     min_cluster_sizes=min_cluster_sizes,
-    # )
+    # cluster_runner.run_clustering()
+    cluster_runner.run_multiple_clustering(
+        n_clusters=n_clusters,
+        thresholds=thresholds,
+        min_samples=min_samples,
+        min_cluster_sizes=min_cluster_sizes,
+    )
 
     end_time = time.time()
     logger.info(f"Time taken: {end_time - start_time}")

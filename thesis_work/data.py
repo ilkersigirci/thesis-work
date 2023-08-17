@@ -7,6 +7,7 @@ import pandas as pd
 
 from thesis_work.cv.split import create_folds
 from thesis_work.molnet_dataloader import load_molnet_dataset
+from thesis_work.utils import is_valid_smiles
 
 # from thesis_work.chemberta.molnet_dataloader import write_molnet_dataset_for_chemprop
 
@@ -85,6 +86,31 @@ def load_mixed_interacted_compounds(
         result["labels_protein"] = pd.factorize(result["labels"])[0]
 
     return result
+
+
+def load_related_work(
+    sample_size: Optional[int] = None,
+    random_state: int = 42,
+):
+    """Loads data from related work"""
+    data_path = DATA_PATH / "related_work" / "unbiased" / "compound_annotation.csv"
+    df = pd.read_csv(data_path, usecols=["SMILES"])
+    df = df.rename(columns={"SMILES": "text"})
+
+    # FIXME: Df has no labels. This is a temporary fix.
+    df["labels"] = 0
+
+    df = df[df["text"].apply(is_valid_smiles)]
+
+    if sample_size is not None:
+        if len(df) < sample_size:
+            logger.warning(
+                f"Sample size is {sample_size} is greater than number of data is {len(df)}."
+            )
+
+        df = df.sample(n=sample_size, random_state=random_state)
+
+    return df
 
 
 def load_data_splits(

@@ -14,7 +14,7 @@ from chemprop.data import MoleculeDataLoader, get_data_from_smiles
 from chemprop.train.molecule_fingerprint import model_fingerprint
 from chemprop.utils import load_checkpoint
 
-from thesis_work.utils import check_device
+from thesis_work.utils.utils import check_device
 
 # from chemprop.train.molecule_fingerprint import molecule_fingerprint
 

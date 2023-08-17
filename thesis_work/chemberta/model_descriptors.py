@@ -6,8 +6,8 @@ import torch
 from simpletransformers.language_representation import RepresentationModel
 from transformers import RobertaModel, RobertaTokenizer, RobertaTokenizerFast
 
-from thesis_work.initialization_utils import check_initialization_params
-from thesis_work.utils import check_device
+from thesis_work.utils.initialization import check_initialization_params
+from thesis_work.utils.utils import check_device
 
 
 def initialize_model_tokenizer(model_name: str = "DeepChem/ChemBERTa-77M-MLM"):

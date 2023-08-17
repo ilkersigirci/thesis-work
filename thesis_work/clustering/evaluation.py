@@ -23,7 +23,7 @@ from sklearn.metrics import (
     silhouette_score as sklearn_silhouette_score,
 )
 
-from thesis_work.utils import check_device
+from thesis_work.utils.utils import check_device
 
 # from sklearn.metrics import rand_score
 

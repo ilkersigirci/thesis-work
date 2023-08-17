@@ -23,12 +23,16 @@ from thesis_work.clustering.dimensionality_reduction import (
 )
 from thesis_work.clustering.evaluation import CLUSTERING_EVALUATION_METRICS
 from thesis_work.clustering.k_means import apply_k_means
-from thesis_work.initialization_utils import (
+from thesis_work.utils.initialization import (
     check_function_init_params,
     check_initialization_params,
     get_function_defaults,
 )
-from thesis_work.utils import check_device, get_ecfp_descriptors, log_plotly_figure
+from thesis_work.utils.utils import (
+    check_device,
+    get_ecfp_descriptors,
+    log_plotly_figure,
+)
 
 logger = logging.getLogger(__name__)
 

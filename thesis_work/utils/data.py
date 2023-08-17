@@ -6,12 +6,12 @@ import numpy as np
 import pandas as pd
 
 from thesis_work.cv.split import create_folds
-from thesis_work.molnet_dataloader import load_molnet_dataset
-from thesis_work.utils import is_valid_smiles
+from thesis_work.utils.molnet_dataloader import load_molnet_dataset
+from thesis_work.utils.utils import is_valid_smiles
 
 # from thesis_work.chemberta.molnet_dataloader import write_molnet_dataset_for_chemprop
 
-DATA_PATH = Path(__file__).parent.parent / "data"
+DATA_PATH = Path(__file__).parent.parent.parent / "data"
 logger = logging.getLogger(__name__)
 
 
@@ -22,7 +22,7 @@ def transform_bbbp():
 
 def load_data(
     protein_type: str = "kinase",
-    subfolder: str = "original",
+    subfolder: str = "protein_family",
     sample_size: Optional[int] = None,
     random_state: int = 42,
     interacted_only: bool = False,

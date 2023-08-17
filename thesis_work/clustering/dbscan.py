@@ -5,7 +5,7 @@ import torch
 from cuml import DBSCAN as cuDBSCAN, HDBSCAN as cuHDBSCAN
 from sklearn.cluster import DBSCAN as skDBSCAN, HDBSCAN as skHDBSCAN
 
-from thesis_work.utils import check_device
+from thesis_work.utils.utils import check_device
 
 
 def apply_dbscan(

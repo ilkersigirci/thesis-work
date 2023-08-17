@@ -14,7 +14,7 @@ from rdkit.Chem.MolStandardize.rdMolStandardize import LargestFragmentChooser
 from rdkit.DataStructs.cDataStructs import ExplicitBitVect
 
 import wandb
-from thesis_work.initialization_utils import check_initialization_params
+from thesis_work.utils.initialization import check_initialization_params
 
 logger = logging.getLogger(__name__)
 

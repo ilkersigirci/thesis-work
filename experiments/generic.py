@@ -5,14 +5,14 @@ import os
 import time
 
 from thesis_work.clustering.runner import ClusterRunner
-from thesis_work.data import load_mixed_interacted_compounds, load_related_work
+from thesis_work.utils.data import load_mixed_interacted_compounds, load_related_work
 
 logger = logging.getLogger(__name__)
 
 
 def main():
     ## To disable all wandb logging
-    # os.environ["WANDB_MODE"] = "disabled"
+    os.environ["WANDB_MODE"] = "disabled"
 
     wandb_project_name = "related-work"
 
@@ -42,7 +42,8 @@ def main():
     # model_name = "ecfp"
     # model_name = "chemprop"
 
-    n_components = 25
+    # n_components = 25
+    n_components = 64
 
     # dimensionality_reduction_method = None
     # dimensionality_reduction_method_kwargs = None

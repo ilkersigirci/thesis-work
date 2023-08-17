@@ -11,7 +11,7 @@ from thesis_work.chemberta.model_descriptors import (
     get_model_descriptor,
     initialize_model_tokenizer,
 )
-from thesis_work.utils import get_ecfp_descriptor, is_valid_smiles
+from thesis_work.utils.utils import get_ecfp_descriptor, is_valid_smiles
 
 CAFFEINE_SMILES = "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
 

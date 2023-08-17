@@ -6,7 +6,7 @@ import torch
 from cuml import KMeans as cuKMeans
 from sklearn.cluster import KMeans as skKMeans
 
-from thesis_work.utils import check_device
+from thesis_work.utils.utils import check_device
 
 logger = logging.getLogger(__name__)
 

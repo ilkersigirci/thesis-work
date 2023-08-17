@@ -7,7 +7,7 @@ from rdkit.DataStructs.cDataStructs import ExplicitBitVect
 from scipy.spatial.distance import pdist
 from sklearn.metrics import pairwise_distances
 
-from thesis_work.initialization_utils import check_initialization_params
+from thesis_work.utils.initialization import check_initialization_params
 
 # from scipy.spatial import distance_matrix
 # from torch import pdist

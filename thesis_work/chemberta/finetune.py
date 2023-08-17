@@ -8,7 +8,7 @@ from thesis_work.chemberta.utils import (  # noqa: F401
     predict_model,
     train_model,
 )
-from thesis_work.data import load_data_splits
+from thesis_work.utils.data import load_data_splits
 
 logging.basicConfig(level=logging.INFO)
 transformers_logger = logging.getLogger(__file__)

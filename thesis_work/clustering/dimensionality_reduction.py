@@ -12,8 +12,8 @@ from sklearn.decomposition import PCA as pca_cpu
 from umap import UMAP as umap_cpu
 
 import wandb
-from thesis_work.initialization_utils import check_initialization_params
-from thesis_work.utils import check_device
+from thesis_work.utils.initialization import check_initialization_params
+from thesis_work.utils.utils import check_device
 
 logger = logging.getLogger(__name__)
 

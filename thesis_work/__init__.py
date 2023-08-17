@@ -7,7 +7,7 @@ __version__ = pkg_resources.get_distribution("thesis_work").version
 
 from pathlib import Path
 
-from .utils import ignore_warnings, initialize_logger
+from .utils.utils import ignore_warnings, initialize_logger
 
 initialize_logger()
 ignore_warnings()

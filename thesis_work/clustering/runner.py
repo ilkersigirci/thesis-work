@@ -21,11 +21,7 @@ from thesis_work.clustering.dimensionality_reduction import (
     apply_umap,
     plot_umap,
 )
-from thesis_work.clustering.evaluation import (
-    EvaluationMetric,
-    adjusted_rand_index,
-    silhouette_index,
-)
+from thesis_work.clustering.evaluation import CLUSTERING_EVALUATION_METRICS
 from thesis_work.clustering.k_means import apply_k_means
 from thesis_work.initialization_utils import (
     check_function_init_params,
@@ -33,8 +29,6 @@ from thesis_work.initialization_utils import (
     get_function_defaults,
 )
 from thesis_work.utils import check_device, get_ecfp_descriptors, log_plotly_figure
-
-# from thesis_work.clustering.evaluation import davies_bouldin_index, rand_index
 
 logger = logging.getLogger(__name__)
 
@@ -50,17 +44,6 @@ clustering_algorithm_mapping = {
     "HDBSCAN": apply_hdbscan,
     # "WARD": None,
 }
-
-clustering_evaluation_methods = [
-    EvaluationMetric(
-        name="silhouette", function=silhouette_index, need_true_labels=False
-    ),
-    EvaluationMetric(
-        name="adjusted-rand-index", function=adjusted_rand_index, need_true_labels=True
-    ),
-    # EvaluationMetric(name="davies-bouldin", function=davies_bouldin_index, need_true_labels=False),
-    # EvaluationMetric(name="quality-partition-index", function=quality_partition_index, need_true_labels=True),
-]
 
 
 class ClusterRunner:
@@ -79,6 +62,7 @@ class ClusterRunner:
         clustering_method: str = "K-MEANS",
         clustering_method_kwargs: Optional[Dict] = None,
         num_threads: Optional[int] = None,
+        logged_plot_type: str = "static",
     ):
         self.wandb_project_name = wandb_project_name
         self.wandb_run_name = wandb_run_name
@@ -97,6 +81,7 @@ class ClusterRunner:
         self.clustering_method = clustering_method.upper()
         self.clustering_method_kwargs = clustering_method_kwargs or {}
         self.num_threads = num_threads
+        self.logged_plot_type = logged_plot_type
 
         self._init_checks()
 
@@ -208,6 +193,10 @@ class ClusterRunner:
 
             logger.info(message)
 
+        check_initialization_params(
+            attr=self.logged_plot_type, accepted_list=["static", "dynamic"]
+        )
+
     def run_vector_embeddings(self):
         """
         # TODO:
@@ -294,7 +283,8 @@ class ClusterRunner:
     ) -> None:
         legend_title = "Protein Family"
         original_log_name = "Original Labels"
-        cluster_log_name = "Cluster Labels"
+        calculated_log_name = "Cluster Calculated Labels"
+        plot_method = "plotly"
 
         umap_output = apply_umap(
             data=data,
@@ -306,28 +296,40 @@ class ClusterRunner:
             device=self.device,
         )
 
-        umap_2d_original_data = pd.DataFrame(
-            {"labels": original_labels, "X": umap_output[:, 0], "Y": umap_output[:, 1]},
-            index=original_labels.index,
-        )
+        label_type_mapping = {
+            original_log_name: original_labels,
+            calculated_log_name: calculated_labels,
+        }
 
-        umap_2d_original_figure = plot_umap(
-            data=umap_2d_original_data,
-            plot_title=None,
-            legend_title=legend_title,
-            method="plotly",
-        )
-        log_plotly_figure(figure=umap_2d_original_figure, name=original_log_name)
+        # FIXME: Don't create new array since it inreases memory usage for large datasets
+        umap_data = pd.DataFrame({"X": umap_output[:, 0], "Y": umap_output[:, 1]})
 
-        umap_2d_original_data["labels"] = calculated_labels
+        for name, label in label_type_mapping.items():
+            umap_data["labels"] = label
 
-        umap_2d_calculated_figure = plot_umap(
-            data=umap_2d_original_data,
-            plot_title=None,
-            legend_title=legend_title,
-            method="plotly",
-        )
-        log_plotly_figure(figure=umap_2d_calculated_figure, name=cluster_log_name)
+            umap_2d_original_figure = plot_umap(
+                data=umap_data,
+                plot_title=None,
+                legend_title=legend_title,
+                method=plot_method,
+            )
+
+            if self.logged_plot_type == "static":
+                import io
+
+                from PIL import Image
+
+                if plot_method != "plotly":
+                    raise ValueError("Static logging only works with plotly")
+                fig_bytes = umap_2d_original_figure.to_image(
+                    format="png", engine="kaleido"
+                )
+                img = Image.open(io.BytesIO(fig_bytes))
+                img = np.asarray(img)
+
+                wandb.log({name: wandb.Image(img)})
+            elif self.logged_plot_type == "dynamic":
+                log_plotly_figure(figure=umap_2d_original_figure, name=name)
 
     def evaluate_clusters(
         self, cluster_labels: np.array, inertia: Optional[float] = None
@@ -337,7 +339,7 @@ class ClusterRunner:
         """
         is_true_labels_present = "labels" in self.smiles_df.columns
 
-        for clustering_evaluation_method in clustering_evaluation_methods:
+        for clustering_evaluation_method in CLUSTERING_EVALUATION_METRICS:
             if not clustering_evaluation_method.need_true_labels:
                 target = self.vector_embeddings
             else:
@@ -397,13 +399,6 @@ class ClusterRunner:
     def _run_clustering(self):
         self.run_vector_embeddings()
         self.run_dimensionality_reduction()
-
-        # self.log_umap_2D(
-        #     data=self.vector_embeddings,
-        #     labels=self.smiles_df["labels"],
-        #     log_name="Original Labels",
-        #     legend_title="Protein Family",
-        # )
 
         clustering_kwargs = self.clustering_method_kwargs
         clustering_kwargs["data"] = self.vector_embeddings

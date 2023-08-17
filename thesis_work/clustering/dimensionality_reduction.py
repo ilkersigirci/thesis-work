@@ -63,6 +63,8 @@ def apply_pca(  # noqa: PLR0913
     return transformed_data
 
 
+# TODO: Implement parametric UMAP with Autoencoder
+# https://github.com/lmcinnes/umap/blob/master/notebooks/Parametric_UMAP/04.0-parametric-umap-mnist-embedding-convnet-with-autoencoder-loss.ipynb
 def apply_umap(  # noqa: PLR0913
     data: np.array,
     n_components: int = 2,
@@ -84,6 +86,11 @@ def apply_umap(  # noqa: PLR0913
 
     TIMES:
         - TODO: Add times for CPU and GPU
+
+    TODO:
+        - Change default: n_epochs=None, learning_rate=1.0
+            - n_epochs (default): 200 for large datasets, 500 for small datasets
+        - For cpu UMAP, add parametric UMAP
     """
     check_device(device=device)
 

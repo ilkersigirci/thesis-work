@@ -97,6 +97,7 @@ ucx-py-cu11 = { url = "https://pypi.nvidia.com/ucx-py-cu11/ucx_py_cu11-0.31.1-cp
 chemprop = "^1.6.1"
 mols2grid = "^2.0.0"
 plotly = "^5.16.0"
+kaleido = "0.2.1"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.1.2"

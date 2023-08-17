@@ -266,7 +266,8 @@ cython_debug/
 # Custom ignores
 
 data/*
-!data/original
+!data/protein_family
+!data/property_prediction
 !data/related_work
 
 /.ruff_cache/

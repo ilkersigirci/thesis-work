@@ -11,7 +11,7 @@ from dagster import (
 )
 from pydantic import Field
 
-from thesis_work.data import load_data_splits
+from thesis_work.utils.data import load_data_splits
 
 
 class DataConfig(Config):

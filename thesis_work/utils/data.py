@@ -15,12 +15,12 @@ DATA_PATH = Path(__file__).parent.parent.parent / "data"
 logger = logging.getLogger(__name__)
 
 
-# TODO:
-def transform_bbbp():
+# TODO
+def load_property_prediction():
     pass
 
 
-def load_data(
+def load_protein_family(
     protein_type: str = "kinase",
     subfolder: str = "protein_family",
     sample_size: Optional[int] = None,
@@ -46,13 +46,7 @@ def load_data(
     return df
 
 
-def save_data(df: pd.DataFrame, name: str, subfolder: str = "result_data"):
-    """Saves data"""
-    data_path = DATA_PATH / subfolder / f"{name}.csv"
-    df.to_csv(data_path, index=False)
-
-
-def load_mixed_interacted_compounds(
+def load_protein_family_interacted_mix(
     protein_types: Optional[List[str]] = None,
     each_sample_size: int = 1000,
     random_state: int = 42,
@@ -70,7 +64,7 @@ def load_mixed_interacted_compounds(
     protein_types.sort()
 
     for protein_type in protein_types:
-        data = load_data(
+        data = load_protein_family(
             protein_type=protein_type,
             sample_size=each_sample_size,
             random_state=random_state,
@@ -86,6 +80,50 @@ def load_mixed_interacted_compounds(
         result["labels_protein"] = pd.factorize(result["labels"])[0]
 
     return result
+
+
+def load_protein_family_splits(
+    protein_type: str = "kinase", fixed_cv: bool = False
+) -> Tuple[pd.DataFrame, Optional[pd.DataFrame], pd.DataFrame]:
+    """Loads data and generates folds.
+
+    Args:
+        protein_type: Type of the protein.
+        fixed_cv: Whether to use fixed CV. If True, then the last fold is used as
+         test set and no validation set is used.
+
+    Returns:
+        train, validation and test data.
+    """
+
+    if protein_type == "clintox":
+        tasks, (train_df, valid_df, test_df), transformers = load_molnet_dataset(
+            "clintox", tasks_wanted=None
+        )
+
+    else:
+        df = load_protein_family(protein_type=protein_type)
+
+        if fixed_cv is True:
+            len_data = len(df)
+            fold_list = create_folds(length=len_data)
+            train_indices = [item for sublist in fold_list[:5] for item in sublist]
+            test_indices = fold_list[5]
+
+            train_df = df.iloc[train_indices]
+            valid_df = None
+            test_df = df.iloc[test_indices]
+
+        else:
+            df = df.sample(frac=1, random_state=42)
+
+            train_df, valid_df, test_df = np.split(
+                # df.sample(frac=1), [int(0.6 * len(df)), int(0.8 * len(df))]
+                df.sample(frac=1),
+                [int(0.8 * len(df)), int(0.9 * len(df))],
+            )
+
+    return train_df, valid_df, test_df
 
 
 def load_related_work(
@@ -113,45 +151,7 @@ def load_related_work(
     return df
 
 
-def load_data_splits(
-    protein_type: str = "kinase", fixed_cv: bool = False
-) -> Tuple[pd.DataFrame, Optional[pd.DataFrame], pd.DataFrame]:
-    """Loads data and generates folds.
-
-    Args:
-        protein_type: Type of the protein.
-        fixed_cv: Whether to use fixed CV. If True, then the last fold is used as
-         test set and no validation set is used.
-
-    Returns:
-        train, validation and test data.
-    """
-
-    if protein_type == "clintox":
-        tasks, (train_df, valid_df, test_df), transformers = load_molnet_dataset(
-            "clintox", tasks_wanted=None
-        )
-
-    else:
-        df = load_data(protein_type=protein_type)
-
-        if fixed_cv is True:
-            len_data = len(df)
-            fold_list = create_folds(length=len_data)
-            train_indices = [item for sublist in fold_list[:5] for item in sublist]
-            test_indices = fold_list[5]
-
-            train_df = df.iloc[train_indices]
-            valid_df = None
-            test_df = df.iloc[test_indices]
-
-        else:
-            df = df.sample(frac=1, random_state=42)
-
-            train_df, valid_df, test_df = np.split(
-                # df.sample(frac=1), [int(0.6 * len(df)), int(0.8 * len(df))]
-                df.sample(frac=1),
-                [int(0.8 * len(df)), int(0.9 * len(df))],
-            )
-
-    return train_df, valid_df, test_df
+def save_data(df: pd.DataFrame, name: str, subfolder: str = "result_data"):
+    """Saves data"""
+    data_path = DATA_PATH / subfolder / f"{name}.csv"
+    df.to_csv(data_path, index=False)

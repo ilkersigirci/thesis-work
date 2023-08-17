@@ -8,7 +8,7 @@ from thesis_work.chemberta.utils import (  # noqa: F401
     predict_model,
     train_model,
 )
-from thesis_work.utils.data import load_data_splits
+from thesis_work.utils.data import load_protein_family_splits
 
 logging.basicConfig(level=logging.INFO)
 transformers_logger = logging.getLogger(__file__)
@@ -24,7 +24,7 @@ def main():
     protein_type = "kinase"
     output_dir = f"{protein_type.upper()}_77M_MLM_Shuffle_80_10_10_epoch10"
 
-    train_df, valid_df, test_df = load_data_splits(protein_type=protein_type)
+    train_df, valid_df, test_df = load_protein_family_splits(protein_type=protein_type)
     model = get_model()
 
     # print(model.tokenizer)

@@ -321,22 +321,30 @@ class ClusterRunner:
                 figure=umap_2d_original_figure, name=name, method=self.logged_plot_type
             )
 
+    def _is_ground_truth_available(self) -> bool:
+        if "labels" not in self.smiles_df.columns:
+            return False
+
+        if len(self.smiles_df["labels"].unique()) == 1:
+            return False
+
+        return True
+
     def evaluate_clusters(
         self, cluster_labels: np.array, inertia: Optional[float] = None
     ) -> None:
         """In silhouete score: target: vector_embeddings, labels: cluster_labels
         In adjusted rand index: target: smiles_df["labels"], labels: cluster_labels
         """
-        is_true_labels_present = "labels" in self.smiles_df.columns
 
         for clustering_evaluation_method in CLUSTERING_EVALUATION_METRICS:
             if not clustering_evaluation_method.need_true_labels:
                 target = self.vector_embeddings
             else:
-                if not is_true_labels_present:
+                if not self._is_ground_truth_available():
                     logger.info(
-                        f"Skipping calculating {clustering_evaluation_method} since "
-                        "true labels are not present in data"
+                        f"Skipping calculating {clustering_evaluation_method.name}, "
+                        "since true labels are not present in data"
                     )
                     continue
 

@@ -14,8 +14,11 @@ logger = logging.getLogger(__name__)
 
 
 def main():
-    ## To disable all wandb logging
-    os.environ["WANDB_MODE"] = "disabled"
+    # NOTE: To disable all wandb logging
+    # os.environ["WANDB_MODE"] = "disabled"
+
+    # NOTE: Needed for scalene profiling
+    # os.environ["WANDB__EXECUTABLE"] = "/home/ilker/miniconda3/envs/thesis-work/bin/python"
 
     wandb_project_name = "related-work"
 
@@ -24,9 +27,10 @@ def main():
     logged_plot_type = "static"
     device = "cuda"
 
-    # sample_size = None
+    sample_size = None
+    # sample_size = 300
     # sample_size = 10_000
-    sample_size = 25_000
+    # sample_size = 40_000
 
     protein_types = ["gpcr", "kinase", "protease"]
     protein_types.sort()
@@ -106,7 +110,8 @@ def main():
     )
 
     # n_clusters = None
-    n_clusters = list(range(2, 100, 3))
+    # n_clusters = list(range(2, 100, 3))
+    n_clusters = list(range(5, 100, 5))
 
     # thresholds = None
     thresholds = [0.2, 0.35, 0.5, 0.8]

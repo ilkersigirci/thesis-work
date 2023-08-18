@@ -93,13 +93,23 @@ def mutual_info_index(target, labels, device="cuda"):
 
 
 def silhouette_index(target, labels, device="cuda"):
+    """
+    NOTE: cuml version needs quadratic memory. To fix it chunksize should be set.
+    Default is 40_000 but it exceeds memory limit of my GPU, since it has 8 GB VRAM.
+    Moreover, using chunksize doesn't descrease accuracy: https://github.com/rapidsai/cuml/pull/3362
+    - sample_size=chunksize is not necessary for sklearn version
+    """
     check_device(device=device)
 
-    silhouette_score = (
-        cuml_silhouette_score if device == "cuda" else sklearn_silhouette_score
-    )
+    # Maximum working value for my GPU
+    chunksize = 32_000
 
-    return silhouette_score(target, labels, metric="euclidean")
+    if device == "cuda":
+        return cuml_silhouette_score(
+            target, labels, metric="euclidean", chunksize=chunksize
+        )
+    elif device == "cpu":
+        return sklearn_silhouette_score(target, labels, metric="euclidean")
 
 
 # TODO: Implement quality partition index

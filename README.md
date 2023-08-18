@@ -1,31 +1,25 @@
-# Clone the project
-- Since the project uses `git submodules`, you need to clone the project with `--recurse-submodules` flag.
-```bash
-git clone <REPO-URL> --recurse-submodules
-```
-
-- If you forget `--resurce-submodules` option when cloning, equivalent command is:
-```bash
-git clone <REPO-URL>
-git submodule init # To initialize your local configuration file
-git submodule update # To fetch all the data from that project
-
- # Much shorter form
-git clone <REPO-URL>
-git submodule update --init
-```
-
-
 # Install
+
+## Env File
+
+```env
+PUID=<REDACTED>
+PGID=<REDACTED>
+DAGSTER_HOME=<REDACTED>
+WANDB_API_KEY=<REDACTED>
+```
+
 
 ## Default installation
 
 - Install poetry
+
 ```bash
 curl -sSL https://install.python-poetry.org | python3 -
 ```
 
 - Install the project dependencies
+
 ```bash
 conda create -n thesis-work python=3.10 -y
 conda activate thesis-work
@@ -55,6 +49,7 @@ docker run -it thesis-work:latest bash
 ```
 
 # Useful Makefile commands
+
 ```bash
 # All available commands
 makefile

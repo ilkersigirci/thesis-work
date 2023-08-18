@@ -1,7 +1,3 @@
-# FIXME: Not working in dagster:
-# from __future__ import annotations
-
-
 from copy import deepcopy
 from typing import Any, Dict, Optional
 

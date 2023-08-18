@@ -25,7 +25,7 @@ repos:
         args: ["--remove"]
         description: Removes the encoding-pragma since python3 codes are utf-8 by default
       - id: check-added-large-files
-        args: ["--maxkb=5000"]
+        args: ["--maxkb=50000"]
 
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.9.0
@@ -33,7 +33,7 @@ repos:
       - id: python-check-mock-methods
       - id: python-no-log-warn
       # - id: python-no-eval
-      - id: python-use-type-annotations
+      # - id: python-use-type-annotations
 
   - repo: https://github.com/psf/black
     # rev: 23.1.0
@@ -45,7 +45,7 @@ repos:
         args: ["--config=pyproject.toml"]
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.279
+    rev: v0.0.285
     hooks:
       - id: ruff
 

@@ -40,15 +40,20 @@ generate-setup-file = false
 [tool.poetry.scripts]
 placeholder = "thesis_work.scripts.placeholder:placeholder_script"
 
-## poetry source add --secondary private-pypi http://private-pypi/simple/
-# [[tool.poetry.source]]
-# name = "private-pypi"
-# url = "http://private-pypi/simple/" # NOTE: /simple/ is important
-# default = false
-# secondary = true
+[[tool.poetry.source]]
+name = "PyPI"
+priority = "default"
+
+# poetry source add --priority=supplemental nvidia-pypi https://pypi.nvidia.com/
+[[tool.poetry.source]]
+name = "nvidia-pypi"
+url = "https://pypi.nvidia.com/"
+priority = "supplemental"
 
 [tool.poetry.dependencies]
 python = "3.10.*"
+scikit-learn = "^1.3.0" # Min supported version for HDBSCAN
+dagster = "1.4.2"
 deepchem = "^2.7.1"
 streamlit= "^1.19.0"
 py3dmol = "2.0.0.post2"
@@ -58,13 +63,41 @@ matplotlib = "^3.7.1"
 regex = "^2022.10.31"
 transformers = "4.30.2" # NOTE: Fix for `No module named 'transformers.models.mmbt'`
 simpletransformers = "^0.63.11"
-wandb = "^0.13.11"
+wandb = "^0.15.8"
 bertviz = "^1.4.0"
 # apex = {git = "https://github.com/NVIDIA/apex.git", branch = "master"}
 numpy = "1.21.6" # NOTE: Only needed for `chemberta.load_molnet_dataset`
-dagster = "1.4.2"
-torch = "^1.13.1" # NOTE: Fix for `ValueError: libcublas.so.*[0-9] not found in the system path`
+# torch = "^1.13.1" # NOTE: Fix for `ValueError: libcublas.so.*[0-9] not found in the system path`
+torch = "2.0.0"
 seaborn = "^0.12.2"
+umap-learn = {extras = ["plot"], version = "^0.5.3"}
+leidenalg = "^0.10.1"
+datashader = "^0.15.1"
+
+# Nvidia Rapids Related - Cuda 11
+cuml-cu11 = { url = "https://pypi.nvidia.com/cuml-cu11/cuml_cu11-23.4.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
+cudf-cu11 = { url = "https://pypi.nvidia.com/cudf-cu11/cudf_cu11-23.4.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
+dask-cudf-cu11 = { url = "https://pypi.nvidia.com/dask-cudf-cu11/dask_cudf_cu11-23.4.0-py3-none-any.whl" }
+raft-dask-cu11 = { url = "https://pypi.nvidia.com/raft-dask-cu11/raft_dask_cu11-23.4.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
+cubinlinker-cu11 = { url = "https://pypi.nvidia.com/cubinlinker-cu11/cubinlinker_cu11-0.3.0.post1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
+ptxcompiler-cu11 = { url = "https://pypi.nvidia.com/ptxcompiler-cu11/ptxcompiler_cu11-0.7.0.post1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
+rmm-cu11 = { url = "https://pypi.nvidia.com/rmm-cu11/rmm_cu11-23.4.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
+pylibraft-cu11 = { url = "https://pypi.nvidia.com/pylibraft-cu11/pylibraft_cu11-23.4.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
+ucx-py-cu11 = { url = "https://pypi.nvidia.com/ucx-py-cu11/ucx_py_cu11-0.31.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
+
+# Nvidia Rapids Related - Cuda 12
+# cuml-cu12 = { url = "https://pypi.nvidia.com/cuml-cu12/cuml_cu12-23.6.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
+# cudf-cu12 = { url = "https://pypi.nvidia.com/cudf-cu12/cudf_cu12-23.6.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
+# dask-cudf-cu12 = { url = "https://pypi.nvidia.com/dask-cudf-cu12/dask_cudf_cu12-23.6.0-py3-none-any.whl" }
+# raft-dask-cu12 = { url = "https://pypi.nvidia.com/raft-dask-cu12/raft_dask_cu12-23.6.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
+# rmm-cu12 = {url = "https://pypi.nvidia.com/rmm-cu12/rmm_cu12-23.6.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"}
+# pylibraft-cu12 = {url = "https://pypi.nvidia.com/pylibraft-cu12/pylibraft_cu12-23.6.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"}
+# ucx-py-cu12 = {url = "https://pypi.nvidia.com/ucx-py-cu12/ucx_py_cu12-0.32.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"}
+# python-utils = "^3.7.0"
+chemprop = "^1.6.1"
+mols2grid = "^2.0.0"
+plotly = "^5.16.0"
+kaleido = "0.2.1"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.1.2"
@@ -82,7 +115,7 @@ mkdocstrings = {version = "^0.20.0", extras = ["python"]}
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^2.19.0"
-ruff = "0.0.279"
+ruff = "0.0.285"
 black = {version = "23.1.0", extras = ["d", "jupyter"]}
 mypy = "^1.0.0"
 scalene = "^1.5.19"
@@ -190,7 +223,7 @@ max-complexity = 10
 combine-as-imports = true
 # force-wrap-aliases = true
 # known-first-party = ["SomeLibrary"]
-# known-third-party = ["SomeLibrary"]
+known-third-party = ["wandb"]
 
 # mypy section
 # Read more here: https://mypy.readthedocs.io/en/stable/config_file.html#using-a-pyproject-toml-file

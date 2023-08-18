@@ -3,7 +3,11 @@ from typing import Union
 import numpy as np
 import pandas as pd
 import torch
+from simpletransformers.language_representation import RepresentationModel
 from transformers import RobertaModel, RobertaTokenizer, RobertaTokenizerFast
+
+from thesis_work.utils.initialization import check_initialization_params
+from thesis_work.utils.utils import check_device
 
 
 def initialize_model_tokenizer(model_name: str = "DeepChem/ChemBERTa-77M-MLM"):
@@ -61,21 +65,49 @@ def get_model_descriptor(
     return torch.mean(last_layer[0], dim=0).detach().numpy()
 
 
-def add_model_descriptor_to_df(df: pd.DataFrame, model_name: str) -> pd.DataFrame:
-    """Adds vector embedding to the dataframe."""
+def get_model_descriptors(
+    smiles_series: pd.Series,
+    model_name: str = "DeepChem/ChemBERTa-77M-MLM",
+    method: str = "simpletransformers",
+    combine_strategy: str = "mean",
+    device: str = "cuda",
+) -> np.array:
+    """Calculates and returns model vector embedding for given smiles list.
 
-    if "smiles" not in df.columns:
-        raise ValueError("df must contain a column named smiles")
+    Args:
+        smiles_series: Smiles data.
+        model_name: Model name to be used.
+        method: Method to be used for embedding.
+        combine_strategy = None -> word_embedding / "mean" -> sentence_embedding
 
-    model, tokenizer = initialize_model_tokenizer(model_name)
+    NOTE
+        - For 68,000 compounds with method: simpletransformers it takes:
+            - 19s on GPU
+            - 4m 23 on CPU
+        - For simpletransformers methods, returning `tolist()` is important hence, we
+        embed them in dataframe.
+    """
 
-    df["vector"] = df["smiles"].apply(
-        lambda x: get_model_descriptor(
-            model=model, tokenizer=tokenizer, smiles_str=x
-        ).tolist()
+    check_device(device=device)
+    use_cuda = device == "cuda"
+
+    check_initialization_params(
+        attr=method, accepted_list=["manual", "simpletransformers"]
     )
 
-    return df
+    if method == "manual":
+        model, tokenizer = initialize_model_tokenizer(model_name)
+
+        return smiles_series.apply(
+            lambda x: get_model_descriptor(
+                model=model, tokenizer=tokenizer, smiles_str=x
+            )
+        )
+    elif method == "simpletransformers":
+        model = RepresentationModel(
+            model_type="roberta", model_name=model_name, use_cuda=use_cuda
+        )
+        return model.encode_sentences(smiles_series, combine_strategy=combine_strategy)
 
 
 # Mean Pooling - Take attention mask into account for correct averaging
@@ -83,9 +115,10 @@ def mean_pooling(model_output, attention_mask):
     """
     From https://github.com/seyonechithrananda/bert-loves-chemistry/blob/master/chemberta/visualization/ChemBERTA_dimensionaliy_reduction_BBBP.ipynb
     """
-    token_embeddings = model_output[
-        0
-    ]  # First element of model_output contains all token embeddings
+
+    # First element of model_output contains all token embeddings
+    token_embeddings = model_output[0]
+
     input_mask_expanded = (
         attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
     )

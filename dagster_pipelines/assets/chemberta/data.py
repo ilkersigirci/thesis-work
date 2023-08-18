@@ -11,7 +11,7 @@ from dagster import (
 )
 from pydantic import Field
 
-from thesis_work.chemberta.utils import load_data_splits
+from thesis_work.utils.data import load_protein_family_splits
 
 
 class DataConfig(Config):
@@ -30,7 +30,7 @@ def data_asset(
     context: OpExecutionContext,
     config: DataConfig,
 ) -> Tuple[pd.DataFrame, Optional[pd.DataFrame], pd.DataFrame]:
-    train_df, valid_df, test_df = load_data_splits(
+    train_df, valid_df, test_df = load_protein_family_splits(
         protein_type=config.protein_type, fixed_cv=config.fixed_cv
     )
 

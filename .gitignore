@@ -265,6 +265,13 @@ cython_debug/
 
 # Custom ignores
 
+data/*
+vectors
+!data/chembl30
+!data/protein_family
+!data/property_prediction
+!data/related_work
+
 /.ruff_cache/
 public
 
@@ -272,9 +279,12 @@ public
 profile.*
 
 # Training results
-data
-cache_dir
-outputs
-results
-runs
+temp
+bert-loves-chemistry
+# outputs
+# results
+# runs
+# cache_dir
 wandb
+models/molbert
+molbert_repo

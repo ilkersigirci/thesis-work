@@ -8,13 +8,14 @@ from .resources.wandb import WandbResource
 
 warnings.filterwarnings("ignore", category=ExperimentalWarning)
 
-from .assets import chemberta_assets
+from .assets import chemberta_assets, playground_assets
 
 JOBS = [finetune_job]
 SCHEDULES = []
 SENSORS = []
 
-ASSETS = list(chemberta_assets)
+# ASSETS = [chemberta_assets, playground_assets] # FIXME: Not working
+ASSETS = chemberta_assets + playground_assets
 
 RESOURCES = {
     "wandb_resource": WandbResource(apikey=EnvVar("WANDB_API_KEY")),

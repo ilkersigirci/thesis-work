@@ -16,7 +16,7 @@ PYPI_URLS=
 DOCKER_IMAGE=thesis-work
 DOCKER_TARGET=development
 
-.PHONY: help install test clean build publish doc pre-commit format lint profile
+.PHONY: help install test clean build publish doc pre-commit format lint profile docker gui
 .DEFAULT_GOAL=help
 
 help:
@@ -87,7 +87,7 @@ install-precommit: ## Install pre-commit hooks
 	pre-commit install
 
 install-lint:
-	pip install black[d]==23.1.0 ruff==0.0.279
+	pip install black[d]==23.1.0 ruff==0.0.285
 
 install-build:
 	############# PIP ############
@@ -230,11 +230,15 @@ profile-gui: ## Profile the file with scalene and shows the report in the browse
 profile-builtin: ## Profile the file with cProfile and shows the report in the terminal
 	${PYTHON} -m cProfile -s tottime ${PROFILE_FILE_PATH}
 
-dagster-development:  ## Run dagster development env with environment variables
-	dagster dev -p 3005
+dagster-dev:  ## Run dagster development env with environment variables
+	dagster-webserver - p 3006
+	# dagster dev -p 3006
 
 docker: ## Build docker image
-	docker build --tag ${DOCKER_IMAGE} --file docker/Dockerfile --target ${DOCKER_TARGET} .
+	docker build --tag ${DOCKER_IMAGE}:${DOCKER_TARGET} --file docker/Dockerfile --target ${DOCKER_TARGET} .
 
 run-file: ## Run python file with python with exported env variables
 	${PYTHON} ${FILE_PATH}
+
+gui: ## Run GUI with streamlit
+	streamlit run thesis_work/gui/index.py

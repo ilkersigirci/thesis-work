@@ -7,13 +7,13 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import torch
+import wandb
 from PIL import Image
 from rdkit import Chem, RDLogger
 from rdkit.Chem import AllChem
 from rdkit.Chem.MolStandardize.rdMolStandardize import LargestFragmentChooser
 from rdkit.DataStructs.cDataStructs import ExplicitBitVect
 
-import wandb
 from thesis_work.utils.initialization import check_initialization_params
 
 logger = logging.getLogger(__name__)

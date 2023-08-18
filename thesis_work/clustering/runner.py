@@ -4,9 +4,9 @@ from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
+import wandb
 from threadpoolctl import threadpool_limits
 
-import wandb
 from thesis_work import LIBRARY_ROOT_PATH
 from thesis_work.chemberta.model_descriptors import (
     get_model_descriptors as get_model_descriptors_chemberta,

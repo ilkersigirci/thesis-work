@@ -2,6 +2,7 @@ from copy import deepcopy
 from typing import Any, Dict, Optional
 
 import pandas as pd
+import wandb
 from dagster import (
     Config,
     EnvVar,
@@ -16,7 +17,6 @@ from simpletransformers.classification import ClassificationModel
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import KFold
 
-import wandb
 from dagster_pipelines.resources.wandb import WandbResource
 from thesis_work.chemberta.utils import (
     evaluate_model as evaluate_model_util,

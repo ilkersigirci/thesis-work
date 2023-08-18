@@ -7,11 +7,11 @@ import pandas as pd
 import plotly.express as px
 import seaborn as sns
 import torch
+import wandb
 from cuml import PCA as pca_gpu, UMAP as umap_gpu
 from sklearn.decomposition import PCA as pca_cpu
 from umap import UMAP as umap_cpu
 
-import wandb
 from thesis_work.utils.initialization import check_initialization_params
 from thesis_work.utils.utils import check_device
 

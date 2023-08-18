@@ -223,7 +223,7 @@ max-complexity = 10
 combine-as-imports = true
 # force-wrap-aliases = true
 # known-first-party = ["SomeLibrary"]
-# known-third-party = ["SomeLibrary"]
+known-third-party = ["wandb"]
 
 # mypy section
 # Read more here: https://mypy.readthedocs.io/en/stable/config_file.html#using-a-pyproject-toml-file

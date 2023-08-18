@@ -1,6 +1,5 @@
-from dagster import ConfigurableResource
-
 import wandb
+from dagster import ConfigurableResource
 
 
 class WandbResource(ConfigurableResource):

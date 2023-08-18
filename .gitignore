@@ -266,6 +266,8 @@ cython_debug/
 # Custom ignores
 
 data/*
+vectors
+!data/chembl30
 !data/protein_family
 !data/property_prediction
 !data/related_work

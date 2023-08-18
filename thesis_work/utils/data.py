@@ -15,6 +15,31 @@ DATA_PATH = Path(__file__).parent.parent.parent / "data"
 logger = logging.getLogger(__name__)
 
 
+def _sample_data(
+    df: pd.DataFrame, sample_size: Optional[int] = None, random_state: int = 42
+):
+    if sample_size is None:
+        return df
+
+    if len(df) < sample_size:
+        logger.warning(
+            f"Sample size is {sample_size} is greater than number of data is {len(df)}."
+        )
+
+    df = df.sample(n=sample_size, random_state=random_state)
+
+    return df
+
+
+def load_chembl(sample_size: Optional[int] = None, random_state: int = 42):
+    # TODO: Change column names
+
+    data_path = DATA_PATH / "chembl" / "smiles.tar.xz"
+    df = pd.read_csv(data_path, compression="xz", sep="\t")
+
+    return _sample_data(df, sample_size=sample_size, random_state=random_state)
+
+
 # TODO
 def load_property_prediction():
     pass
@@ -22,33 +47,24 @@ def load_property_prediction():
 
 def load_protein_family(
     protein_type: str = "kinase",
-    subfolder: str = "protein_family",
     sample_size: Optional[int] = None,
     random_state: int = 42,
     interacted_only: bool = False,
 ) -> pd.DataFrame:
     """ "Loads data"""
-    data_path = DATA_PATH / subfolder / f"{protein_type}.csv"
+    data_path = DATA_PATH / "protein_family" / f"{protein_type}.csv"
     df = pd.read_csv(data_path)
     df.columns = ["text", "labels"]
 
     if interacted_only is True:
         df = df[df["labels"] == 1]
 
-    if sample_size is not None:
-        if len(df) < sample_size:
-            logger.warning(
-                f"Sample size is {sample_size} is greater than number of data is {len(df)}."
-            )
-
-        df = df.sample(n=sample_size, random_state=random_state)
-
-    return df
+    return _sample_data(df, sample_size=sample_size, random_state=random_state)
 
 
-def load_protein_family_interacted_mix(
+def load_protein_family_multiple_interacted(
     protein_types: Optional[List[str]] = None,
-    each_sample_size: int = 1000,
+    sample_size: int = 3000,
     random_state: int = 42,
     convert_labels: bool = False,
 ) -> pd.DataFrame:
@@ -57,6 +73,15 @@ def load_protein_family_interacted_mix(
     And sample each protein type
     """
     result = pd.DataFrame()
+
+    each_sample_size = sample_size / len(protein_types)
+
+    if isinstance(each_sample_size, float):
+        each_sample_size = int(each_sample_size)
+        logger.info(
+            f"Sample size: {sample_size} is not divisible by number of protein types."
+            "Hence, each protein type will be sampled by {each_sample_size}"
+        )
 
     if protein_types is None:
         protein_types = ["gpcr", "kinase", "protease"]
@@ -140,15 +165,7 @@ def load_related_work(
 
     df = df[df["text"].apply(is_valid_smiles)]
 
-    if sample_size is not None:
-        if len(df) < sample_size:
-            logger.warning(
-                f"Sample size is {sample_size} is greater than number of data is {len(df)}."
-            )
-
-        df = df.sample(n=sample_size, random_state=random_state)
-
-    return df
+    return _sample_data(df, sample_size=sample_size, random_state=random_state)
 
 
 def save_data(df: pd.DataFrame, name: str, subfolder: str = "result_data"):

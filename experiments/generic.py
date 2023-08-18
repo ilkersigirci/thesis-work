@@ -5,7 +5,10 @@ import os
 import time
 
 from thesis_work.clustering.runner import ClusterRunner
-from thesis_work.utils.data import load_protein_family_interacted_mix, load_related_work
+from thesis_work.utils.data import (
+    load_protein_family_multiple_interacted,
+    load_related_work,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -28,9 +31,9 @@ def main():
     protein_types = ["gpcr", "kinase", "protease"]
     protein_types.sort()
 
-    # smiles_df = load_protein_family_interacted_mix(
+    # smiles_df = load_protein_family_multiple_interacted(
     #     protein_types=protein_types,
-    #     each_sample_size=sample_size // len(protein_types),
+    #     sample_size=sample_size,
     #     random_state=random_state,
     #     convert_labels=False,
     # )

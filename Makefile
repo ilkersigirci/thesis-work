@@ -87,7 +87,7 @@ install-precommit: ## Install pre-commit hooks
 	pre-commit install
 
 install-lint:
-	pip install black[d]==23.1.0 ruff==0.0.279
+	pip install black[d]==23.1.0 ruff==0.0.285
 
 install-build:
 	############# PIP ############

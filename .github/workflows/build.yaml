@@ -1,20 +1,19 @@
-name: Build the Docker Image
+# name: Build the Docker Image
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+# on:
+#   push:
+#     branches:
+#       - main
+#   pull_request:
+#     branches:
+#       - main
 
-jobs:
-  # needs: NOTHING
-  lint:
-    runs-on: ubuntu-22.04
+# jobs:
+#   lint:
+#     runs-on: ubuntu-22.04
 
-    steps:
-      - uses: actions/checkout@v3
-      - name: Docker Production Build
-        run: |
-          make -s docker DOCKER_TARGET=production
+#     steps:
+#       - uses: actions/checkout@v3
+#       - name: Docker Production Build
+#         run: |
+#           make -s docker DOCKER_TARGET=production

@@ -14,6 +14,7 @@ from thesis_work.chemberta.model_descriptors import (
 from thesis_work.chemprop.model_descriptors import (
     get_model_descriptors as get_model_descriptors_chemprop,
 )
+from thesis_work.clustering.agglomerative import apply_agglomerative
 from thesis_work.clustering.butina import apply_butina, calculate_butina_distance_matrix
 from thesis_work.clustering.dbscan import apply_hdbscan  # apply_dbscan
 from thesis_work.clustering.dimensionality_reduction import (
@@ -46,7 +47,7 @@ clustering_algorithm_mapping = {
     "BUTINA": apply_butina,
     # "DBSCAN": apply_dbscan, # FIXME: Not working right now.
     "HDBSCAN": apply_hdbscan,
-    # "WARD": None,
+    "AGGLOMERATIVE": apply_agglomerative,
 }
 
 
@@ -371,6 +372,7 @@ class ClusterRunner:
                 "BUTINA": "threshold",
                 "DBSCAN": "min_samples",
                 "HDBSCAN": "min_cluster_size",
+                "AGGLOMERATIVE": "n_clusters",
             }
 
             if inertia is not None:
@@ -438,7 +440,7 @@ class ClusterRunner:
         min_samples: Optional[List[int]] = None,
         min_cluster_sizes: Optional[List[int]] = None,
     ):
-        if self.clustering_method == "K-MEANS":
+        if self.clustering_method in ["K-MEANS", "AGGLOMERATIVE"]:
             if n_clusters is None:
                 n_clusters = [2, 3, 5, 10, 20, 50, 100]
 

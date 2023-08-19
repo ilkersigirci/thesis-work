@@ -50,25 +50,31 @@ def main():
     # model_name = "chemprop"
 
     # n_components = 25
-    n_components = 64
+    n_components = 32
 
     # dimensionality_reduction_method = None
     # dimensionality_reduction_method_kwargs = None
+
+    # dimensionality_reduction_method = "PCA"
+    # dimensionality_reduction_method_kwargs = {
+    #     "n_components": n_components,
+    # }
 
     dimensionality_reduction_method = "UMAP"
     dimensionality_reduction_method_kwargs = {
         "n_components": n_components,
         "n_neighbors": 15,
         "min_dist": 0.1,
-        "metric": "euclidean",
+        # "metric": "euclidean",
+        "metric": "jaccard",
     }
 
-    clustering_method = "K-MEANS"
-    clustering_method_kwargs = {
-        "init_method": "k-means++",
-        "n_clusters": 3,
-        "n_init": 1,
-    }
+    # clustering_method = "K-MEANS"
+    # clustering_method_kwargs = {
+    #     "init_method": "k-means++",
+    #     "n_clusters": 3,
+    #     "n_init": 1,
+    # }
 
     # clustering_method = "BUTINA"
     # clustering_method_kwargs = {
@@ -76,6 +82,20 @@ def main():
     #     "distance_metric": "euclidean",
     #     "threshold": 0.35,
     # }
+
+    # clustering_method = "HDBSCAN"
+    # clustering_method_kwargs = {
+    #     "min_cluster_size": 5,
+    #     "metric": "euclidean",
+    #     # "metric": "jaccard",
+    # }
+
+    clustering_method = "AGGLOMERATIVE"
+    clustering_method_kwargs = {
+        "n_clusters": 3,
+        "affinity": "euclidean",
+        "linkage": "single",
+    }
 
     # wandb_run_name = None
     wandb_run_name = f"""
@@ -117,10 +137,10 @@ def main():
     thresholds = [0.2, 0.35, 0.5, 0.8]
 
     # min_samples = None
-    min_samples = [10, 20]
+    min_samples = list(range(5, 100, 5))
 
     # min_cluster_sizes = None
-    min_cluster_sizes = [5, 10]
+    min_cluster_sizes = list(range(5, 100, 5))
 
     start_time = time.time()
 

@@ -166,6 +166,10 @@ class ClusterRunner:
                 function=self.dimensionality_reduction_func,
                 init_params=self.dimensionality_reduction_method_kwargs,
             )
+
+            # TODO: If using ecfp model, use metric="jaccard"
+            if self.model_name == "ecfp":
+                pass
         else:
             self.dimensionality_reduction_func = None
 

@@ -269,7 +269,7 @@ data/*
 vectors
 !data/chembl30
 !data/protein_family
-!data/property_prediction
+!data/moleculenet
 !data/related_work
 
 /.ruff_cache/

@@ -9,7 +9,6 @@ DAGSTER_HOME=<REDACTED>
 WANDB_API_KEY=<REDACTED>
 ```
 
-
 ## Default installation
 
 - Install poetry
@@ -32,10 +31,8 @@ make -s install
 ## Docker
 
 ```bash
-# Development build (800 MB)
 docker build --tag thesis-work --file docker/Dockerfile --target development .
 
-# Production build (145 MB)
 docker build --tag thesis-work --file docker/Dockerfile --target production .
 ```
 

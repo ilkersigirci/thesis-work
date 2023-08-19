@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from thesis_work.cv.split import create_folds
+from thesis_work.utils.initialization import check_initialization_params
 from thesis_work.utils.molnet_dataloader import load_molnet_dataset
 from thesis_work.utils.utils import is_valid_smiles
 
@@ -40,9 +41,19 @@ def load_chembl(sample_size: Optional[int] = None, random_state: int = 42):
     return _sample_data(df, sample_size=sample_size, random_state=random_state)
 
 
-# TODO
-def load_property_prediction():
-    pass
+def load_moleculenet(task: str = "bace", sample_size: Optional[int] = None):
+    """Loads data of MoleculeNet property prediction classification tasks."""
+
+    check_initialization_params(
+        attr=task, accepted_list=["bace", "bbbp", "clintox", "hiv", "sider", "tox21"]
+    )
+
+    data_path = DATA_PATH / "moleculenet" / f"{task}.csv"
+    df = pd.read_csv(data_path)
+
+    # TODO: Change column names
+
+    return _sample_data(df, sample_size=sample_size)
 
 
 def load_protein_family(
@@ -164,6 +175,9 @@ def load_related_work(
     df["labels"] = 0
 
     df = df[df["text"].apply(is_valid_smiles)]
+
+    # Reset index
+    df = df.reset_index(drop=True)
 
     return _sample_data(df, sample_size=sample_size, random_state=random_state)
 

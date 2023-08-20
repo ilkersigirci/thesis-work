@@ -32,10 +32,10 @@ def _sample_data(
     return df
 
 
-def load_chembl(sample_size: Optional[int] = None, random_state: int = 42):
+def load_chembl_30(sample_size: Optional[int] = None, random_state: int = 42):
     # TODO: Change column names
 
-    data_path = DATA_PATH / "chembl" / "smiles.tar.xz"
+    data_path = DATA_PATH / "chembl_30" / "smiles.tar.xz"
     df = pd.read_csv(data_path, compression="xz", sep="\t")
 
     return _sample_data(df, sample_size=sample_size, random_state=random_state)
@@ -43,6 +43,7 @@ def load_chembl(sample_size: Optional[int] = None, random_state: int = 42):
 
 def load_moleculenet(task: str = "bace", sample_size: Optional[int] = None):
     """Loads data of MoleculeNet property prediction classification tasks."""
+    # TODO: Change column names for each task
 
     check_initialization_params(
         attr=task, accepted_list=["bace", "bbbp", "clintox", "hiv", "sider", "tox21"]
@@ -50,8 +51,6 @@ def load_moleculenet(task: str = "bace", sample_size: Optional[int] = None):
 
     data_path = DATA_PATH / "moleculenet" / f"{task}.csv"
     df = pd.read_csv(data_path)
-
-    # TODO: Change column names
 
     return _sample_data(df, sample_size=sample_size)
 

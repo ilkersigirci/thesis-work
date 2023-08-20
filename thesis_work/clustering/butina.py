@@ -16,10 +16,7 @@ import numpy as np
 import pandas as pd
 from rdkit.ML.Cluster import Butina
 
-from thesis_work.clustering.utils import (
-    efcp_distance_matrix,
-    generic_distance_matrix,
-)
+from thesis_work.clustering.utils import generic_distance_matrix
 
 logger = logging.getLogger(__name__)
 
@@ -27,34 +24,13 @@ logger = logging.getLogger(__name__)
 def calculate_butina_distance_matrix(
     data: np.array, model_name: str, distance_metric: str
 ):
-    if model_name == "ecfp":
-        if distance_metric != "tanimoto":
-            distance_metric = "tanimoto"
-            message = (
-                "For ecfp distance matrix calculation, only tanimoto is supported."
-                "Hence, distance_metric changed to tanimoto"
-            )
-            logger.info(message)
+    if model_name == "ecfp" and distance_metric not in ["tanimoto", "jaccard"]:
+        logger.info("For ecfp fingerprints, jaccard(tanimoto) metric is recommended.")
 
-        nfps = len(data)
-        distances = efcp_distance_matrix(
-            ecfps=data, method="fast", return_upper_tringular=True
-        )
-
-    else:
-        if distance_metric == "tanimoto":
-            distance_metric = "euclidian"
-
-            message = (
-                "For non-ecfp distance matrix calculation, `tanimoto` metric "
-                "is not supported. Hence, distance_metric changed to euclidian."
-            )
-            logger.info(message)
-
-        nfps = data.shape[0]
-        distances = generic_distance_matrix(
-            x=data, metric=distance_metric, return_upper_tringular=True
-        )
+    nfps = data.shape[0]
+    distances = generic_distance_matrix(
+        x=data, metric=distance_metric, return_upper_tringular=True
+    )
 
     return distances, nfps
 
@@ -76,6 +52,10 @@ def apply_butina(  # noqa: PLR0913
         threshold: Threshold for butina clustering.
         nfps: Length of original data, not the distance matrix.
         is_distance_matrix: If True, data is already a distance matrix.
+
+    NOTE:
+        - For ecfp, rdkit tanimoto distance matrix calculation isn't used. Instead,
+        sklearn pdisk with jaccard distance is used, since they are basically same.
     """
     if is_distance_matrix is True:
         if nfps is None:

@@ -102,43 +102,54 @@ def is_valid_smiles(smiles: str) -> bool:
 
 
 def get_ecfp_descriptor(
-    smiles_str: str, radius: int = 2, nBits: int = 2048, return_type="original"
+    smiles_str: str, radius: int = 2, nBits: int = 2048, return_type="numpy"
 ) -> Union[np.array, ExplicitBitVect]:
     if not is_valid_smiles(smiles_str):
         raise ValueError("Invalid SMILES string")
 
-    if return_type not in ["original", "numpy"]:
-        raise ValueError("Invalid return type")
+    check_initialization_params(attr=return_type, accepted_list=["numpy", "original"])
 
     mol = Chem.MolFromSmiles(smiles_str)
     fpgen = AllChem.GetMorganGenerator(fpSize=nBits, radius=radius)
 
-    if return_type == "original":
-        # return = AllChem.GetMorganFingerprintAsBitVect(mol, radius=radius, nBits=nBits)
-        return fpgen.GetFingerprint(mol)
-
-    elif return_type == "numpy":
+    if return_type == "numpy":
         # NOTE: Since it is binary, dtype=np.int8 is possible. BUT it gives error with cuml
         # arr = np.zeros((1,), dtype=np.float32)
         # AllChem.DataStructs.ConvertToNumpyArray(fp, arr)
 
         return fpgen.GetFingerprintAsNumPy(mol).astype(np.float32)
 
+    elif return_type == "original":
+        # return = AllChem.GetMorganFingerprintAsBitVect(mol, radius=radius, nBits=nBits)
+        return fpgen.GetFingerprint(mol)
+
 
 def get_ecfp_descriptors(
     smiles_series: pd.Series,
     radius: int = 2,
     nBits: int = 2048,
-    inner_return_type="original",
+    inner_return_type="numpy",
 ) -> Union[np.array, List[ExplicitBitVect]]:
     """
     TODO: Make this faster
     """
     check_initialization_params(
-        attr=inner_return_type, accepted_list=["original", "numpy"]
+        attr=inner_return_type, accepted_list=["numpy", "original"]
     )
 
-    if inner_return_type == "original":
+    if inner_return_type == "numpy":
+        # NOTE: Since it is binary, dtype=np.int8 is possible. BUT it gives error with cuml
+        descriptors = np.zeros((smiles_series.shape[0], nBits), dtype=np.float32)
+
+        for i, smiles in enumerate(smiles_series):
+            descriptors[i, :] = get_ecfp_descriptor(
+                smiles_str=smiles,
+                radius=radius,
+                nBits=nBits,
+                return_type=inner_return_type,
+            )
+
+    elif inner_return_type == "original":
         # descriptors = np.zeros((smiles_series.shape[0], 1), dtype=object)
         smiles_series = smiles_series.to_numpy()
 
@@ -152,25 +163,9 @@ def get_ecfp_descriptors(
             for smiles_str in smiles_series
         ]
 
-        # FIXME: Doing this, breaks Tanimoto similarity calculation
+        # NOTE: Doing this, breaks Tanimoto similarity calculation
         # Because it converts `rdkit.DataStructs.cDataStructs.ExplicitBitVect` to numpy array
         # descriptors = np.array(descriptors)
-
-    elif inner_return_type == "numpy":
-        # NOTE: Since it is binary, dtype=np.int8 is possible. BUT it gives error with cuml
-        descriptors = np.zeros((smiles_series.shape[0], nBits), dtype=np.float32)
-
-        for i, smiles in enumerate(smiles_series):
-            descriptors[i, :] = get_ecfp_descriptor(
-                smiles_str=smiles,
-                radius=radius,
-                nBits=nBits,
-                return_type=inner_return_type,
-            )
-
-    # NOTE: Don't work
-    # vectorized_function = np.vectorize(get_ecfp_descriptor)
-    # descriptors = vectorized_function(smiles_series.to_numpy(), radius, nBits)
 
     return descriptors
 

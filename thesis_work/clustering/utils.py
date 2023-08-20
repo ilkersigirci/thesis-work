@@ -24,6 +24,13 @@ def generic_distance_matrix(
     Returns distance matrix for given x and y arrays
     """
 
+    if metric == "tanimoto":
+        metric = "jaccard"
+
+        logger.info(
+            "Tanimoto metric is same as jaccard metric. Hence, metric changed to jaccard"
+        )
+
     if return_upper_tringular is True:
         return pdist(X=x, metric=metric)
 
@@ -52,14 +59,20 @@ def generic_similarity_matrix(
 
 
 def efcp_similarity_matrix(
-    ecfps: List[ExplicitBitVect],  # NOTE: Should be created with inner_type=original
+    ecfps: List[ExplicitBitVect],
     method: str = "fast",
     return_upper_tringular: bool = True,
 ) -> np.array:
     """
     Returns ECFP similarity matrix for given smiles list
 
+    Args:
+        ecfps: List of ECFP fingerprints. Should be created with inner_type=original
+            in get_ecfp_descriptors function.
+
     NOTE:
+        - Actually, this function is not neccessary since tanimoto similarity is same as
+        jaccard similarity. Hence, we can use generic_similarity_matrix with metric="jaccard".
         - Butina expects, 1d upper triangular matrix. Moreover, this option saves lots of memory.
         - Fast method is ~10x faster than slow method. For 6k compounds:
             - Fast: 3.8 seconds

@@ -2,7 +2,6 @@ import logging
 from typing import Tuple
 
 import numpy as np
-import torch
 from cuml import KMeans as cuKMeans
 from sklearn.cluster import KMeans as skKMeans
 
@@ -48,7 +47,7 @@ def apply_k_means(  # noqa: PLR0913
     if device == "cuda" and init_method == "k-means++":
         init_method = "scalable-k-means++"
 
-    K_MEANS = cuKMeans if torch.cuda.is_available() else skKMeans
+    K_MEANS = cuKMeans if device == "cuda" else skKMeans
 
     kmeans = K_MEANS(
         init=init_method,

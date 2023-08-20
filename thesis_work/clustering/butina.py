@@ -38,10 +38,12 @@ def calculate_butina_distance_matrix(
 def apply_butina(  # noqa: PLR0913
     data: np.array,
     model_name: str,
-    distance_metric: str = "euclidian",
+    distance_metric: str = "euclidean",
     threshold: float = 0.35,
     nfps: Optional[int] = None,
     is_distance_matrix: bool = False,
+    random_state: int = 42,
+    device: str = "cuda",
 ) -> Tuple[np.array, None]:
     """Apply butina clustering on given smiles list.
 
@@ -67,6 +69,9 @@ def apply_butina(  # noqa: PLR0913
         distances, nfps = calculate_butina_distance_matrix(
             data=data, model_name=model_name, distance_metric=distance_metric
         )
+
+    if device == "cuda":
+        logger.info("BUTINA doesn't support GPU, hence, it will be run on CPU.")
 
     # TODO: Add distFunc=distance_metric as function
     clusters = Butina.ClusterData(distances, nfps, threshold, isDistData=True)

@@ -90,7 +90,7 @@ def load_protein_family_multiple_interacted(
         each_sample_size = int(each_sample_size)
         logger.info(
             f"Sample size: {sample_size} is not divisible by number of protein types."
-            "Hence, each protein type will be sampled by {each_sample_size}"
+            f"Hence, each protein type will be sampled by {each_sample_size}"
         )
 
     if protein_types is None:

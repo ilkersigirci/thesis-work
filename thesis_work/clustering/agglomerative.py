@@ -2,7 +2,6 @@ import logging
 from typing import Tuple
 
 import numpy as np
-import torch
 from cuml.cluster import AgglomerativeClustering as cuAgglomerativeClustering
 from sklearn.cluster import AgglomerativeClustering as skAgglomerativeClustering
 
@@ -17,6 +16,7 @@ def apply_agglomerative(  # noqa: PLR0913
     affinity: str = "euclidean",
     linkage: str = "single",
     connectivity="knn",
+    random_state: int = 42,
     device: str = "cuda",
 ) -> Tuple[np.array, None]:
     """
@@ -26,9 +26,7 @@ def apply_agglomerative(  # noqa: PLR0913
     check_device(device=device)
 
     AGGLOMEREATIVE = (
-        cuAgglomerativeClustering
-        if torch.cuda.is_available()
-        else skAgglomerativeClustering
+        cuAgglomerativeClustering if device == "cuda" else skAgglomerativeClustering
     )
 
     agglomerative = AGGLOMEREATIVE(

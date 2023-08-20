@@ -25,7 +25,9 @@ def main():
     num_threads = None
     random_state = 42
     logged_plot_type = "static"
+
     device = "cuda"
+    # device = "cpu"
 
     # sample_size = None
     # sample_size = 300
@@ -36,14 +38,14 @@ def main():
     protein_types = ["gpcr", "kinase", "protease"]
     protein_types.sort()
 
-    # smiles_df = load_protein_family_multiple_interacted(
-    #     protein_types=protein_types,
-    #     sample_size=sample_size,
-    #     random_state=random_state,
-    #     convert_labels=False,
-    # )
+    smiles_df = load_protein_family_multiple_interacted(
+        protein_types=protein_types,
+        sample_size=sample_size,
+        random_state=random_state,
+        convert_labels=False,
+    )
 
-    smiles_df = load_related_work(sample_size=sample_size, random_state=random_state)
+    # smiles_df = load_related_work(sample_size=sample_size, random_state=random_state)
 
     model_name = "DeepChem/ChemBERTa-77M-MTR"
     # model_name = "DeepChem/ChemBERTa-77M-MLM"
@@ -67,16 +69,16 @@ def main():
         "n_components": n_components,
         "n_neighbors": 15,
         "min_dist": 0.1,
-        "metric": "euclidean",
-        # "metric": "jaccard",
+        # "metric": "euclidean",
+        "metric": "jaccard",
     }
 
-    # clustering_method = "K-MEANS"
-    # clustering_method_kwargs = {
-    #     "init_method": "k-means++",
-    #     "n_clusters": 3,
-    #     "n_init": 1,
-    # }
+    clustering_method = "K-MEANS"
+    clustering_method_kwargs = {
+        "init_method": "k-means++",
+        "n_clusters": 3,
+        "n_init": 1,
+    }
 
     # clustering_method = "BUTINA"
     # clustering_method_kwargs = {
@@ -85,12 +87,12 @@ def main():
     #     "threshold": 0.35,
     # }
 
-    clustering_method = "HDBSCAN"
-    clustering_method_kwargs = {
-        "min_cluster_size": 5,
-        "metric": "euclidean",
-        # "metric": "jaccard",
-    }
+    # clustering_method = "HDBSCAN"
+    # clustering_method_kwargs = {
+    #     "min_cluster_size": 5,
+    #     "metric": "euclidean",
+    #     # "metric": "jaccard",  # NOTE: Doesn't work
+    # }
 
     # clustering_method = "AGGLOMERATIVE"
     # clustering_method_kwargs = {
@@ -153,7 +155,7 @@ def main():
         "min_samples": min_samples,
         "min_cluster_size": min_cluster_sizes,
     }
-    input_clustering_param_dict = None
+    # input_clustering_param_dict = None
 
     # cluster_runner.run_clustering()
     cluster_runner.run_multiple_clustering(

@@ -23,7 +23,10 @@ from thesis_work.clustering.dimensionality_reduction import (
     apply_umap,
     plot_umap,
 )
-from thesis_work.clustering.evaluation import CLUSTERING_EVALUATION_METRICS
+from thesis_work.clustering.evaluation import (
+    CLUSTERING_EVALUATION_METRICS,
+    is_valid_cluster_labels,
+)
 from thesis_work.clustering.k_means import apply_k_means
 from thesis_work.utils.initialization import (
     check_function_init_params,
@@ -144,6 +147,7 @@ class ClusterRunner:
                 "dataset_size": self.smiles_df.shape[0],
                 "dim_reduction": self.dimensionality_reduction_method,
                 **self.dimensionality_reduction_method_kwargs,
+                **self.clustering_method_kwargs,
                 **self.wandb_extra_configs,
             },
         )
@@ -222,11 +226,24 @@ class ClusterRunner:
             init_params=self.clustering_method_kwargs,
         )
 
+        if self.clustering_method == "HDBSCAN":
+            metric = self.clustering_method_kwargs.get("metric", None)
+
+            if metric == "jaccard" and self.device == "cuda":
+                self.clustering_method_kwargs["metric"] = "euclidean"
+
+                logger.info(
+                    "Using euclidean distance instead of jaccard metric, "
+                    "since cuml doesn't support jaccard for HDBSCAN."
+                )
+
         if (
             self.model_name == "ecfp"
             and self.clustering_method == "BUTINA"
             and self.dimensionality_reduction_method == "UMAP"
         ):
+            self.dimensionality_reduction_method = None
+            self.dimensionality_reduction_method_kwargs = {}
             self.dimensionality_reduction_func = None
 
             message = (
@@ -365,6 +382,9 @@ class ClusterRunner:
         In adjusted rand index: target: smiles_df["labels"], labels: cluster_labels
         """
 
+        if is_valid_cluster_labels(labels=cluster_labels) is False:
+            return None
+
         for clustering_evaluation_method in CLUSTERING_EVALUATION_METRICS:
             if not clustering_evaluation_method.need_true_labels:
                 target = self.vector_embeddings
@@ -388,7 +408,8 @@ class ClusterRunner:
                 device=self.device,
             )
 
-            logged_data = {clustering_evaluation_method.name: score}
+            if score is not None:
+                logged_data = {clustering_evaluation_method.name: score}
 
             if inertia is not None:
                 logged_data["inertia"] = inertia
@@ -418,6 +439,8 @@ class ClusterRunner:
 
         clustering_kwargs = self.clustering_method_kwargs
         clustering_kwargs["data"] = self.vector_embeddings
+        clustering_kwargs["random_state"] = self.random_state
+        clustering_kwargs["device"] = self.device
 
         # Don't calculate distance matrix each time
         if self.clustering_method == "BUTINA":

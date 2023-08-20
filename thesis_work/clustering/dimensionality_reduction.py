@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import seaborn as sns
-import torch
 import wandb
 from cuml import PCA as pca_gpu, UMAP as umap_gpu
 from sklearn.decomposition import PCA as pca_cpu
@@ -48,7 +47,7 @@ def apply_pca(  # noqa: PLR0913
         )
         return data
 
-    PCA = pca_gpu if torch.cuda.is_available() else pca_cpu
+    PCA = pca_gpu if device == "cuda" else pca_cpu
 
     pca_model = PCA(
         n_components=n_components,
@@ -63,8 +62,6 @@ def apply_pca(  # noqa: PLR0913
     return transformed_data
 
 
-# TODO: Implement parametric UMAP with Autoencoder
-# https://github.com/lmcinnes/umap/blob/master/notebooks/Parametric_UMAP/04.0-parametric-umap-mnist-embedding-convnet-with-autoencoder-loss.ipynb
 def apply_umap(  # noqa: PLR0913
     data: np.array,
     n_components: int = 2,
@@ -91,6 +88,12 @@ def apply_umap(  # noqa: PLR0913
         - Change default: n_epochs=None, learning_rate=1.0
             - n_epochs (default): 200 for large datasets, 500 for small datasets
         - For cpu UMAP, add parametric UMAP
+        - Implement parametric UMAP with Autoencoder
+            https://github.com/lmcinnes/umap/blob/master/notebooks/Parametric_UMAP/04.0-parametric-umap-mnist-embedding-convnet-with-autoencoder-loss.ipynb
+        -
+
+    NOTE:
+        - cuml version has only supported "jaccard" distance metric for sparse inputs.
     """
     check_device(device=device)
 
@@ -103,7 +106,7 @@ def apply_umap(  # noqa: PLR0913
         )
         return data
 
-    UMAP = umap_gpu if torch.cuda.is_available() else umap_cpu
+    UMAP = umap_gpu if device == "cuda" else umap_cpu
 
     umap_model = UMAP(
         n_neighbors=n_neighbors,

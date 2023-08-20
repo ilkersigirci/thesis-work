@@ -4,6 +4,7 @@ NOTE:
     To fix TypeError: Expected input to be of type in [dtype('int64')] but got int32
 """
 
+import logging
 from dataclasses import dataclass
 
 from cuml.metrics.cluster import (
@@ -28,11 +29,34 @@ from thesis_work.utils.utils import check_device
 # from sklearn.metrics import rand_score
 
 
+logger = logging.getLogger(__name__)
+
+
 @dataclass
 class EvaluationMetric:
     name: str
     function: callable
     need_true_labels: bool
+
+
+def is_valid_cluster_labels(labels):
+    """Check if cluster labels are valid.
+
+    This happens mostly on BUTINA clustering.
+    """
+    n_samples = len(labels)
+    calculated_max_cluster = labels.max()
+    MIN_CLUSTER = 2
+
+    if calculated_max_cluster < MIN_CLUSTER or calculated_max_cluster >= n_samples:
+        logger.error(
+            f"Calculated clusters is {calculated_max_cluster}. Valid values are:"
+            f"{MIN_CLUSTER} to {n_samples - 1} (inclusive)."
+            "Hence, cluster metrics won't be calculated."
+        )
+        return False
+
+    return True
 
 
 def adjusted_rand_index(target, labels, device="cuda"):

@@ -1,18 +1,21 @@
+import logging
 from typing import Tuple
 
 import numpy as np
-import torch
 from cuml import DBSCAN as cuDBSCAN, HDBSCAN as cuHDBSCAN
 from sklearn.cluster import DBSCAN as skDBSCAN, HDBSCAN as skHDBSCAN
 
 from thesis_work.utils.utils import check_device
 
+logger = logging.getLogger(__name__)
 
-def apply_dbscan(
+
+def apply_dbscan(  # noqa: PLR0913
     data: np.array,
     eps: float = 0.5,
     min_samples: int = 5,
     metric: str = "euclidean",
+    random_state: int = 42,
     device: str = "cuda",
 ) -> Tuple[np.array, None]:
     """Apply dbscan.
@@ -33,7 +36,7 @@ def apply_dbscan(
 
     check_device(device=device)
 
-    DBSCAN = cuDBSCAN if torch.cuda.is_available() else skDBSCAN
+    DBSCAN = cuDBSCAN if device == "cuda" else skDBSCAN
 
     # CPU only params: algorithm: str = "auto"
     clustering_model = DBSCAN(
@@ -53,11 +56,20 @@ def apply_hdbscan(  # noqa: PLR0913
     cluster_selection_epsilon: float = 0.0,
     metric: str = "euclidean",
     cluster_selection_method: str = "eom",
+    random_state: int = 42,
     device: str = "cuda",
 ) -> Tuple[np.array, None]:
     check_device(device=device)
 
-    HDBSCAN = cuHDBSCAN if torch.cuda.is_available() else skHDBSCAN
+    HDBSCAN = cuHDBSCAN if device == "cuda" else skHDBSCAN
+
+    if metric == "jaccard":
+        if device == "cuda":
+            raise ValueError("cuML HDBSCAN doesn't support jaccard metric.")
+        # elif device == "cpu":
+        #     raise ValueError(
+        #         "sklearn HDBSCAN doesn't work with jaccard metric somehow."
+        #     )
 
     # CPU only params: algorithm: str = "auto"
     clustering_model = HDBSCAN(

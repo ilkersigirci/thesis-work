@@ -125,15 +125,35 @@ def silhouette_index(target, labels, device="cuda"):
     """
     check_device(device=device)
 
-    # Maximum working value for my GPU
-    chunksize = 32_000
-
-    if device == "cuda":
-        return cuml_silhouette_score(
-            target, labels, metric="euclidean", chunksize=chunksize
-        )
-    elif device == "cpu":
+    if device == "cpu":
         return sklearn_silhouette_score(target, labels, metric="euclidean")
+
+    # NOTE: This changes wrt data and model type.
+    chunksize = 25_000
+    # chunksize = 32_000
+
+    MAX_TRIES = 3
+
+    while True:
+        if MAX_TRIES == 0:
+            logger.error(
+                "GPU Silhouette score calculation failed with 3 tries."
+                "Hence, using sklearn version."
+            )
+            return sklearn_silhouette_score(target, labels, metric="euclidean")
+
+        try:
+            return cuml_silhouette_score(
+                target, labels, metric="euclidean", chunksize=chunksize
+            )
+        except MemoryError:
+            logger.error(
+                f"When calculating silhouette score with chunksize: {chunksize}, "
+                "CUDA out of memory. Trying with smaller chunksize."
+            )
+
+            chunksize = chunksize - 2_500
+            MAX_TRIES -= 1
 
 
 # TODO: Implement quality partition index

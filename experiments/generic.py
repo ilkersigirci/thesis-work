@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     # NOTE: To disable all wandb logging
-    os.environ["WANDB_MODE"] = "disabled"
+    # os.environ["WANDB_MODE"] = "disabled"
 
     # NOTE: Needed for scalene profiling
     # os.environ["WANDB__EXECUTABLE"] = "/home/ilker/miniconda3/envs/thesis-work/bin/python"
@@ -54,19 +54,23 @@ def main():
     #     convert_labels=False,
     # )
 
-    # subfolder = "chembl27"
+    subfolder = "chembl27"
     # subfolder = "dude"
-    subfolder = "zinc15"
+    compound_name = "abl1"
+
+    # subfolder = "zinc15"
+    # compound_name = None
+
     smiles_df = load_ataberk(
-        subfolder=subfolder, compound_name=None, return_vectors=False
+        subfolder=subfolder, compound_name=compound_name, return_vectors=False
     )
 
     # smiles_df = load_related_work(sample_size=sample_size, random_state=random_state)
 
-    model_name = "DeepChem/ChemBERTa-77M-MTR"
+    # model_name = "DeepChem/ChemBERTa-77M-MTR"
     # model_name = "DeepChem/ChemBERTa-77M-MLM"
     # model_name = "ecfp"
-    # model_name = "chemprop"
+    model_name = "chemprop"
 
     # n_components = 25
     n_components = 32
@@ -80,14 +84,14 @@ def main():
     # }
 
     ## FIXME: With ecfp model + BUTINA clustering, doesn't cluster any molecule.
-    dimensionality_reduction_method = "UMAP"
-    dimensionality_reduction_method_kwargs = {
-        "n_components": n_components,
-        "n_neighbors": 15,
-        "min_dist": 0.1,
-        # "metric": "euclidean",
-        "metric": "jaccard",
-    }
+    # dimensionality_reduction_method = "UMAP"
+    # dimensionality_reduction_method_kwargs = {
+    #     "n_components": n_components,
+    #     "n_neighbors": 15,
+    #     "min_dist": 0.1,
+    #     "metric": "euclidean",
+    #     # "metric": "jaccard",
+    # }
 
     clustering_method = "K-MEANS"
     clustering_method_kwargs = {
@@ -136,6 +140,9 @@ def main():
 
     if subfolder:
         wandb_extra_configs["subfolder"] = subfolder
+
+    if compound_name:
+        wandb_extra_configs["compound_name"] = compound_name
 
     cluster_runner = ClusterRunner(
         wandb_project_name=wandb_project_name,

@@ -25,7 +25,9 @@ def _sample_data(
     if len(df) < sample_size:
         logger.warning(
             f"Sample size is {sample_size} is greater than number of data is {len(df)}."
+            f"Hence, sample size is set to {len(df)}."
         )
+        sample_size = len(df)
 
     df = df.sample(n=sample_size, random_state=random_state)
 

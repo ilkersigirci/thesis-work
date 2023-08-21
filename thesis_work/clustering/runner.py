@@ -92,6 +92,14 @@ CLUSTER_METHOD_MAPPING = {
 }
 
 
+MODELS = [
+    "DeepChem/ChemBERTa-77M-MTR",
+    "DeepChem/ChemBERTa-77M-MLM",
+    "chemprop",
+    "ecfp",
+]
+
+
 class ClusterRunner:
     def __init__(  # noqa: PLR0913
         self,
@@ -181,13 +189,7 @@ class ClusterRunner:
             if not self.smiles_df_path.exists():
                 raise FileNotFoundError(f"{self.smiles_df_path} does not exist")
 
-        model_names = [
-            "DeepChem/ChemBERTa-77M-MTR",
-            "DeepChem/ChemBERTa-77M-MLM",
-            "chemprop",
-            "ecfp",
-        ]
-        check_initialization_params(attr=self.model_name, accepted_list=model_names)
+        check_initialization_params(attr=self.model_name, accepted_list=MODELS)
 
         check_device(device=self.device)
 

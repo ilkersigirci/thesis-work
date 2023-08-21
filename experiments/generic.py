@@ -8,6 +8,7 @@ from thesis_work.clustering.runner import ClusterRunner
 from thesis_work.utils.data import (
     load_protein_family_multiple_interacted,
     load_related_work,
+    load_ataberk,
 )
 
 logger = logging.getLogger(__name__)
@@ -20,7 +21,7 @@ def main():
     # NOTE: Needed for scalene profiling
     # os.environ["WANDB__EXECUTABLE"] = "/home/ilker/miniconda3/envs/thesis-work/bin/python"
 
-    wandb_project_name = "butina-distance-fix"
+    wandb_project_name = "ataberk-data-experiments"
 
     num_threads = None
     random_state = 42
@@ -31,18 +32,33 @@ def main():
 
     # sample_size = None
     # sample_size = 300
-    sample_size = 2_000
-    # sample_size = 10_000
+    # sample_size = 2_000
+    sample_size = 40_000
     # sample_size = 40_000
 
-    protein_types = ["gpcr", "kinase", "protease"]
+    protein_types = [
+        "gpcr",
+        "ionchannel",
+        "kinase",
+        "nuclearreceptor",
+        "protease",
+        "transporter",
+    ]
     protein_types.sort()
+    protein_types = None
 
-    smiles_df = load_protein_family_multiple_interacted(
-        protein_types=protein_types,
-        sample_size=sample_size,
-        random_state=random_state,
-        convert_labels=False,
+    # smiles_df = load_protein_family_multiple_interacted(
+    #     protein_types=protein_types,
+    #     sample_size=sample_size,
+    #     random_state=random_state,
+    #     convert_labels=False,
+    # )
+
+    # subfolder = "chembl27"
+    # subfolder = "dude"
+    subfolder = "zinc15"
+    smiles_df = load_ataberk(
+        subfolder=subfolder, compound_name=None, return_vectors=False
     )
 
     # smiles_df = load_related_work(sample_size=sample_size, random_state=random_state)
@@ -113,8 +129,13 @@ def main():
     if dimensionality_reduction_method_kwargs is not None:
         wandb_run_name += f"_{dimensionality_reduction_method_kwargs['n_components']}"
 
-    wandb_extra_configs = None
-    # wandb_extra_configs = {"proteins": protein_types}
+    wandb_extra_configs = {}
+
+    if protein_types:
+        wandb_extra_configs["proteins"] = protein_types
+
+    if subfolder:
+        wandb_extra_configs["subfolder"] = subfolder
 
     cluster_runner = ClusterRunner(
         wandb_project_name=wandb_project_name,

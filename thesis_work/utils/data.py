@@ -32,6 +32,59 @@ def _sample_data(
     return df
 
 
+def _merge_with_vectors(df: pd.DataFrame, vectors: pd.DataFrame):
+    """Merges data with vectors"""
+    return df.merge(vectors, on="text", how="left")
+
+
+def load_ataberk(
+    subfolder: int,
+    compound_name: Optional[str] = None,
+    return_vectors: bool = False,
+    sample_size: Optional[int] = None,
+    random_state: int = 42,
+):
+    """Loads data from Ataberk's data"""
+
+    check_initialization_params(
+        attr=subfolder, accepted_list=["chembl27", "dude", "zinc15"]
+    )
+
+    if compound_name is None and subfolder != "zinc15":
+        raise ValueError("Compound name must be given.")
+
+    if subfolder == "zinc15":
+        compound_name = "zinc15-minor-targets"
+
+    data_root_path = DATA_PATH / "ataberk" / subfolder
+    data_smiles_path = data_root_path / "smiles" / f"{compound_name}.csv"
+
+    df = pd.read_csv(data_smiles_path)
+
+    if subfolder == "chembl27":
+        check_initialization_params(
+            attr=compound_name, accepted_list=["abl1", "reni", "thb"]
+        )
+
+        df = df.drop(columns=["ChEMBL"], axis=1)
+
+    elif subfolder == "dude":
+        check_initialization_params(
+            attr=compound_name, accepted_list=["abl1", "reni", "thb"]
+        )
+
+    elif subfolder == "zinc15":
+        pass
+
+    if return_vectors is True:
+        data_vectors_path = data_root_path / "vectors" / f"{compound_name}.csv"
+        vectors_df = pd.read_csv(data_vectors_path)
+
+        df = _merge_with_vectors(df=df, vectors=vectors_df)
+
+    return _sample_data(df, sample_size=sample_size, random_state=random_state)
+
+
 def load_chembl_30(sample_size: Optional[int] = None, random_state: int = 42):
     # TODO: Change column names
 
@@ -84,6 +137,17 @@ def load_protein_family_multiple_interacted(
     """
     result = pd.DataFrame()
 
+    if protein_types is None:
+        protein_types = [
+            "gpcr",
+            "ionchannel",
+            "kinase",
+            "nuclearreceptor",
+            "protease",
+            "transporter",
+        ]
+    protein_types.sort()
+
     each_sample_size = sample_size / len(protein_types)
 
     if isinstance(each_sample_size, float):
@@ -92,11 +156,6 @@ def load_protein_family_multiple_interacted(
             f"Sample size: {sample_size} is not divisible by number of protein types."
             f"Hence, each protein type will be sampled by {each_sample_size}"
         )
-
-    if protein_types is None:
-        protein_types = ["gpcr", "kinase", "protease"]
-
-    protein_types.sort()
 
     for protein_type in protein_types:
         data = load_protein_family(

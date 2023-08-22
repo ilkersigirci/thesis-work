@@ -89,21 +89,19 @@ ucx-py-cu11 = {url = "https://pypi.nvidia.com/ucx-py-cu11/ucx_py_cu11-0.33.0-cp3
 cugraph-cu11 = {url = "https://pypi.nvidia.com/cugraph-cu11/cugraph_cu11-23.8.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"}
 pylibcugraph-cu11 = {url = "https://pypi.nvidia.com/pylibcugraph-cu11/pylibcugraph_cu11-23.8.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"}
 
-# Nvidia Rapids Related - Cuda 11. 23.4.1
-# cuml-cu11 = { url = "https://pypi.nvidia.com/cuml-cu11/cuml_cu11-23.4.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
-# cudf-cu11 = { url = "https://pypi.nvidia.com/cudf-cu11/cudf_cu11-23.4.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
-# dask-cudf-cu11 = { url = "https://pypi.nvidia.com/dask-cudf-cu11/dask_cudf_cu11-23.4.0-py3-none-any.whl" }
-# raft-dask-cu11 = { url = "https://pypi.nvidia.com/raft-dask-cu11/raft_dask_cu11-23.4.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
-# cubinlinker-cu11 = { url = "https://pypi.nvidia.com/cubinlinker-cu11/cubinlinker_cu11-0.3.0.post1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
-# ptxcompiler-cu11 = { url = "https://pypi.nvidia.com/ptxcompiler-cu11/ptxcompiler_cu11-0.7.0.post1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
-# rmm-cu11 = { url = "https://pypi.nvidia.com/rmm-cu11/rmm_cu11-23.4.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
-# pylibraft-cu11 = { url = "https://pypi.nvidia.com/pylibraft-cu11/pylibraft_cu11-23.4.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
-# ucx-py-cu11 = { url = "https://pypi.nvidia.com/ucx-py-cu11/ucx_py_cu11-0.31.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl" }
+## NOTE: Tensorflow needs nvidia-cudnn-cu11=8.6.0.163,
+# but pytorch=2.0.0 only supports nvidia-cudnn-cu11=8.5.0.96
+# tensorflow = "^2.13.0"
+
+## Torch nightly builds that supports nvidia-cudnn-cu11=8.6.0.163
+# torch = "2.1.0.dev20230820+cu118"
+# pytorch-triton = "2.1.0+e6216047b8"
+# torchaudio = "2.1.0.dev20230821+cu118"
+# torchvision = "0.16.0.dev20230821+cu118"
 
 # numpy = "1.21.6" # NOTE: Only needed for `chemberta.load_molnet_dataset`
 # apex = {git = "https://github.com/NVIDIA/apex.git", branch = "master"}
 # torch = "^1.13.1" # NOTE: Fix for `ValueError: libcublas.so.*[0-9] not found in the system path`
-# nvidia-cudnn-cu11 = "8.5.0.96" # NOTE: Default for torch 2.0.0. Doesn't work with tensorflow 2.13
 
 [tool.poetry.group.test.dependencies]
 pytest = "^7.1.2"

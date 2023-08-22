@@ -1,4 +1,5 @@
 import logging
+from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union
@@ -92,12 +93,12 @@ CLUSTER_METHOD_MAPPING = {
 }
 
 
-MODELS = [
-    "DeepChem/ChemBERTa-77M-MTR",
-    "DeepChem/ChemBERTa-77M-MLM",
-    "chemprop",
-    "ecfp",
-]
+MODELS_WITH_DIMS = {
+    "DeepChem/ChemBERTa-77M-MTR": 384,
+    "DeepChem/ChemBERTa-77M-MLM": 384,
+    "chemprop": 25,
+    "ecfp": 2048,
+}
 
 
 class ClusterRunner:
@@ -137,6 +138,14 @@ class ClusterRunner:
         self.num_threads = num_threads
         self.logged_plot_type = logged_plot_type
 
+        # Deepcopy dictionary values
+        self.wandb_extra_configs = deepcopy(self.wandb_extra_configs)
+
+        self.dimensionality_reduction_method_kwargs = deepcopy(
+            self.dimensionality_reduction_method_kwargs
+        )
+        self.clustering_method_kwargs = deepcopy(self.clustering_method_kwargs)
+
         self._init_checks()
 
         wandb.login()
@@ -168,9 +177,10 @@ class ClusterRunner:
             run.name = run.id
             self.wandb_run_name = run.id
 
-    def __del__(self):
-        if wandb.run is not None:
-            wandb.finish()
+    # FIXME: This gives error when looping.
+    # def __del__(self):
+    #     if wandb.run is not None:
+    #         wandb.finish()
 
     def _check_global_params(self, in_dict: Dict):
         for global_params in ["random_state", "device"]:
@@ -179,26 +189,60 @@ class ClusterRunner:
                     f"{global_params} should be provided through the Cluster class"
                 )
 
-    def _init_checks(self):
-        if self.smiles_df is None and self.smiles_df_path is None:
-            raise ValueError("Either smiles_df or smiles_df_path must be provided")
+    def _disable_dim_reduction(self, message: Optional[str] = None):
+        if message is None:
+            message = "Disabled dimensionality reduction."
 
-        if self.smiles_df_path is not None:
-            self.smiles_df_path = Path(self.smiles_df_path)
+        n_components = self.dimensionality_reduction_method_kwargs.get(
+            "n_components", None
+        )
 
-            if not self.smiles_df_path.exists():
-                raise FileNotFoundError(f"{self.smiles_df_path} does not exist")
+        self.dimensionality_reduction_method = None
+        self.dimensionality_reduction_method_kwargs = {}
+        self.dimensionality_reduction_func = None
 
-        check_initialization_params(attr=self.model_name, accepted_list=MODELS)
+        # Remove dimensionality reduction from wandb_run_name
+        self.wandb_run_name = self.wandb_run_name.replace(
+            f"_{self.dimensionality_reduction_method}", ""
+        )
 
-        check_device(device=self.device)
+        if n_components is not None:
+            self.wandb_run_name = self.wandb_run_name.replace(f"_{n_components}", "")
 
+        logger.info(message)
+
+    def _check_dim_reduction_init_params(self):
         check_initialization_params(
             attr=self.dimensionality_reduction_method,
             accepted_list=[None, *list(dimensionality_reduction_mapping.keys())],
         )
 
+        self.dimensionality_reduction_func = None
+
         if self.dimensionality_reduction_method is not None:
+            model_feature_dim = MODELS_WITH_DIMS[self.model_name]
+            n_components = self.dimensionality_reduction_method_kwargs.get(
+                "n_components", None
+            )
+
+            if n_components is None:
+                message = (
+                    "Dimensionality reduction dimension is not provided. "
+                    "Disabling dimensionality reduction."
+                )
+                self._disable_dim_reduction(message=message)
+
+                return
+            elif n_components > model_feature_dim:
+                message = (
+                    f"Dimensionality reduction dimension ({n_components}) "
+                    f"cannot be greater than model's feature dimension ({model_feature_dim}). "
+                    "Disabling dimensionality reduction."
+                )
+                self._disable_dim_reduction(message=message)
+
+                return
+
             self.dimensionality_reduction_func = dimensionality_reduction_mapping[
                 self.dimensionality_reduction_method
             ]
@@ -211,8 +255,33 @@ class ClusterRunner:
                 function=self.dimensionality_reduction_func,
                 init_params=self.dimensionality_reduction_method_kwargs,
             )
-        else:
-            self.dimensionality_reduction_func = None
+
+        if (
+            self.model_name == "ecfp"
+            and self.clustering_method == "BUTINA"
+            and self.dimensionality_reduction_method == "UMAP"
+        ):
+            message = (
+                "Disabling UMAP dimensionality reduction, since it is not working "
+                "for BUTINA clustering with ecfp model."
+            )
+            self._disable_dim_reduction(message=message)
+
+    def _init_checks(self):
+        if self.smiles_df is None and self.smiles_df_path is None:
+            raise ValueError("Either smiles_df or smiles_df_path must be provided")
+
+        if self.smiles_df_path is not None:
+            self.smiles_df_path = Path(self.smiles_df_path)
+
+            if not self.smiles_df_path.exists():
+                raise FileNotFoundError(f"{self.smiles_df_path} does not exist")
+
+        check_initialization_params(
+            attr=self.model_name, accepted_list=list(MODELS_WITH_DIMS.keys())
+        )
+
+        check_device(device=self.device)
 
         check_initialization_params(
             attr=self.clustering_method,
@@ -228,6 +297,10 @@ class ClusterRunner:
             init_params=self.clustering_method_kwargs,
         )
 
+        check_initialization_params(
+            attr=self.logged_plot_type, accepted_list=["static", "dynamic"]
+        )
+
         if self.clustering_method == "HDBSCAN":
             metric = self.clustering_method_kwargs.get("metric", None)
 
@@ -239,25 +312,7 @@ class ClusterRunner:
                     "since cuml doesn't support jaccard for HDBSCAN."
                 )
 
-        if (
-            self.model_name == "ecfp"
-            and self.clustering_method == "BUTINA"
-            and self.dimensionality_reduction_method == "UMAP"
-        ):
-            self.dimensionality_reduction_method = None
-            self.dimensionality_reduction_method_kwargs = {}
-            self.dimensionality_reduction_func = None
-
-            message = (
-                "Disabling UMAP dimensionality reduction, since it is not working "
-                "for BUTINA clustering with ecfp model."
-            )
-
-            logger.info(message)
-
-        check_initialization_params(
-            attr=self.logged_plot_type, accepted_list=["static", "dynamic"]
-        )
+        self._check_dim_reduction_init_params()
 
     def run_vector_embeddings(self):
         """
@@ -507,6 +562,10 @@ class ClusterRunner:
             )
 
             self.run_clustering()
+
+        # NOTE: Not the best place to do this
+        if wandb.run is not None:
+            wandb.finish()
 
 
 if __name__ == "__main__":

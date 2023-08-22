@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 def apply_pca(  # noqa: PLR0913
     data: np.array,
-    n_components: int = 2,
+    n_components: int,
     svd_solver="full",
     tol: float = 1e-7,
     random_state: int = 42,
@@ -64,7 +64,7 @@ def apply_pca(  # noqa: PLR0913
 
 def apply_umap(  # noqa: PLR0913
     data: np.array,
-    n_components: int = 2,
+    n_components: int,
     n_neighbors: int = 15,
     min_dist: float = 0.1,
     metric: str = "euclidean",

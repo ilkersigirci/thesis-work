@@ -16,12 +16,10 @@ logger = logging.getLogger(__name__)
 
 def main():
     # NOTE: To disable all wandb logging
-    # os.environ["WANDB_MODE"] = "disabled"
+    os.environ["WANDB_MODE"] = "disabled"
 
     # NOTE: Needed for scalene profiling
     # os.environ["WANDB__EXECUTABLE"] = "/home/ilker/miniconda3/envs/thesis-work/bin/python"
-
-    wandb_project_name = "ataberk-chembl27-renin"
 
     num_threads = None
     random_state = 42
@@ -30,21 +28,21 @@ def main():
     device = "cuda"
     # device = "cpu"
 
-    sample_size = None
-    # sample_size = 300
+    # sample_size = None
+    sample_size = 300
     # sample_size = 2_000
     # sample_size = 25_000
     # sample_size = 40_000
 
-    protein_types = [
-        "gpcr",
-        "ionchannel",
-        "kinase",
-        "nuclearreceptor",
-        "protease",
-        "transporter",
-    ]
-    protein_types.sort()
+    # protein_types = [
+    #     "gpcr",
+    #     "ionchannel",
+    #     "kinase",
+    #     "nuclearreceptor",
+    #     "protease",
+    #     "transporter",
+    # ]
+    # protein_types.sort()
     protein_types = None
 
     # smiles_df = load_protein_family_multiple_interacted(
@@ -56,8 +54,9 @@ def main():
 
     subfolder = "chembl27"
     # subfolder = "dude"
-    # compound_name = "abl1"
-    compound_name = "renin"
+    compound_name = "abl1"
+    # compound_name = "renin"
+    # compound_name = "thb"
 
     # subfolder = "zinc15"
     # compound_name = None
@@ -72,16 +71,16 @@ def main():
 
     # smiles_df = load_related_work(sample_size=sample_size, random_state=random_state)
 
-    model_name = "DeepChem/ChemBERTa-77M-MTR"
+    # model_name = "DeepChem/ChemBERTa-77M-MTR"
     # model_name = "DeepChem/ChemBERTa-77M-MLM"
-    # model_name = "ecfp"
+    model_name = "ecfp"
     # model_name = "chemprop"
 
     # n_components = 16
     n_components = 32
 
-    # dimensionality_reduction_method = None
-    # dimensionality_reduction_method_kwargs = None
+    dimensionality_reduction_method = None
+    dimensionality_reduction_method_kwargs = None
 
     # dimensionality_reduction_method = "PCA"
     # dimensionality_reduction_method_kwargs = {
@@ -89,21 +88,21 @@ def main():
     # }
 
     ## FIXME: With ecfp model + BUTINA clustering, doesn't cluster any molecule.
-    dimensionality_reduction_method = "UMAP"
-    dimensionality_reduction_method_kwargs = {
-        "n_components": n_components,
-        "n_neighbors": 15,
-        "min_dist": 0.1,
-        "metric": "euclidean",
-        # "metric": "jaccard",
-    }
+    # dimensionality_reduction_method = "UMAP"
+    # dimensionality_reduction_method_kwargs = {
+    #     "n_components": n_components,
+    #     "n_neighbors": 15,
+    #     "min_dist": 0.1,
+    #     "metric": "euclidean",
+    #     # "metric": "jaccard",
+    # }
 
-    clustering_method = "K-MEANS"
-    clustering_method_kwargs = {
-        "init_method": "k-means++",
-        "n_clusters": 3,
-        "n_init": 1,
-    }
+    # clustering_method = "K-MEANS"
+    # clustering_method_kwargs = {
+    #     "init_method": "k-means++",
+    #     "n_clusters": 3,
+    #     "n_init": 1,
+    # }
 
     # clustering_method = "BUTINA"
     # clustering_method_kwargs = {
@@ -112,12 +111,12 @@ def main():
     #     "threshold": 0.35,
     # }
 
-    # clustering_method = "HDBSCAN"
-    # clustering_method_kwargs = {
-    #     "min_cluster_size": 5,
-    #     "metric": "euclidean",
-    #     # "metric": "jaccard",  # NOTE: Doesn't work
-    # }
+    clustering_method = "HDBSCAN"
+    clustering_method_kwargs = {
+        "min_cluster_size": 5,
+        "metric": "euclidean",
+        # "metric": "jaccard",  # NOTE: Doesn't work
+    }
 
     # clustering_method = "AGGLOMERATIVE"
     # clustering_method_kwargs = {
@@ -125,6 +124,13 @@ def main():
     #     "affinity": "euclidean",
     #     "linkage": "single",
     # }
+
+    wandb_project_name = "ataberk"
+
+    if compound_name is not None:
+        wandb_project_name += f"-{subfolder}-{compound_name}"
+    elif subfolder is not None:
+        wandb_project_name += f"-{subfolder}"
 
     # wandb_run_name = None
     wandb_run_name = f"""
@@ -200,4 +206,7 @@ def main():
 
 
 if __name__ == "__main__":
+    # from dotenv import load_dotenv
+    # load_dotenv()
+
     main()

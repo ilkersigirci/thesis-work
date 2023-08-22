@@ -122,6 +122,10 @@ def silhouette_index(target, labels, device="cuda"):
     Default is 40_000 but it exceeds memory limit of my GPU, since it has 8 GB VRAM.
     Moreover, using chunksize doesn't descrease accuracy: https://github.com/rapidsai/cuml/pull/3362
     - sample_size=chunksize is not necessary for sklearn version
+
+    TODO:
+        - Check maximum data / chunksize ratio with the same accuracy.
+            - Up to 5x it is OK right now.
     """
     check_device(device=device)
 
@@ -129,8 +133,7 @@ def silhouette_index(target, labels, device="cuda"):
         return sklearn_silhouette_score(target, labels, metric="euclidean")
 
     # NOTE: This changes wrt data and model type.
-    chunksize = 25_000
-    # chunksize = 32_000
+    chunksize = 30_000
 
     MAX_TRIES = 3
 
@@ -152,7 +155,7 @@ def silhouette_index(target, labels, device="cuda"):
                 "CUDA out of memory. Trying with smaller chunksize."
             )
 
-            chunksize = chunksize - 2_500
+            chunksize = chunksize - 5_000
             MAX_TRIES -= 1
 
 

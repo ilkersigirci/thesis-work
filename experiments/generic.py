@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     # NOTE: To disable all wandb logging
-    # os.environ["WANDB_MODE"] = "disabled"
+    os.environ["WANDB_MODE"] = "disabled"
 
     # NOTE: Needed for scalene profiling
     # os.environ["WANDB__EXECUTABLE"] = "/home/ilker/miniconda3/envs/thesis-work/bin/python"
@@ -32,8 +32,8 @@ def main():
 
     # sample_size = None
     # sample_size = 300
-    # sample_size = 2_000
-    sample_size = 40_000
+    sample_size = 2_000
+    # sample_size = 40_000
     # sample_size = 40_000
 
     protein_types = [
@@ -67,16 +67,16 @@ def main():
 
     # smiles_df = load_related_work(sample_size=sample_size, random_state=random_state)
 
-    # model_name = "DeepChem/ChemBERTa-77M-MTR"
+    model_name = "DeepChem/ChemBERTa-77M-MTR"
     # model_name = "DeepChem/ChemBERTa-77M-MLM"
     # model_name = "ecfp"
-    model_name = "chemprop"
+    # model_name = "chemprop"
 
-    # n_components = 25
-    n_components = 32
+    n_components = 16
+    # n_components = 32
 
-    dimensionality_reduction_method = None
-    dimensionality_reduction_method_kwargs = None
+    # dimensionality_reduction_method = None
+    # dimensionality_reduction_method_kwargs = None
 
     # dimensionality_reduction_method = "PCA"
     # dimensionality_reduction_method_kwargs = {
@@ -84,14 +84,14 @@ def main():
     # }
 
     ## FIXME: With ecfp model + BUTINA clustering, doesn't cluster any molecule.
-    # dimensionality_reduction_method = "UMAP"
-    # dimensionality_reduction_method_kwargs = {
-    #     "n_components": n_components,
-    #     "n_neighbors": 15,
-    #     "min_dist": 0.1,
-    #     "metric": "euclidean",
-    #     # "metric": "jaccard",
-    # }
+    dimensionality_reduction_method = "UMAP"
+    dimensionality_reduction_method_kwargs = {
+        "n_components": n_components,
+        "n_neighbors": 15,
+        "min_dist": 0.1,
+        "metric": "euclidean",
+        # "metric": "jaccard",
+    }
 
     clustering_method = "K-MEANS"
     clustering_method_kwargs = {

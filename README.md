@@ -69,6 +69,7 @@ sudo apt-get install libcudnn8-samples=8.8.0.121-1+cuda11.8
 #### Tensorflow GPU Setup
 
 - For latest ubuntu CUDA installation, `sudo ln -s /usr/lib/cuda /usr/local/cuda` might necessary.
+    - But this probably **breaks** pytorch installation. To reverse it: `sudo unlink /usr/local/cuda`
 - As stated in [tensorflow documentation](https://www.tensorflow.org/install/pip), `CUDNN_PATH` should be in `LD_LIBRARY_PATH` in order to use GPU with tensorflow.
 - To do so with conda,
 

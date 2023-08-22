@@ -16,12 +16,12 @@ logger = logging.getLogger(__name__)
 
 def main():
     # NOTE: To disable all wandb logging
-    os.environ["WANDB_MODE"] = "disabled"
+    # os.environ["WANDB_MODE"] = "disabled"
 
     # NOTE: Needed for scalene profiling
     # os.environ["WANDB__EXECUTABLE"] = "/home/ilker/miniconda3/envs/thesis-work/bin/python"
 
-    wandb_project_name = "ataberk-data-experiments"
+    wandb_project_name = "ataberk-chembl27-renin"
 
     num_threads = None
     random_state = 42
@@ -30,10 +30,10 @@ def main():
     device = "cuda"
     # device = "cpu"
 
-    # sample_size = None
+    sample_size = None
     # sample_size = 300
-    sample_size = 2_000
-    # sample_size = 40_000
+    # sample_size = 2_000
+    # sample_size = 25_000
     # sample_size = 40_000
 
     protein_types = [
@@ -56,13 +56,18 @@ def main():
 
     subfolder = "chembl27"
     # subfolder = "dude"
-    compound_name = "abl1"
+    # compound_name = "abl1"
+    compound_name = "renin"
 
     # subfolder = "zinc15"
     # compound_name = None
 
     smiles_df = load_ataberk(
-        subfolder=subfolder, compound_name=compound_name, return_vectors=False
+        subfolder=subfolder,
+        compound_name=compound_name,
+        return_vectors=False,
+        sample_size=sample_size,
+        random_state=random_state,
     )
 
     # smiles_df = load_related_work(sample_size=sample_size, random_state=random_state)
@@ -72,8 +77,8 @@ def main():
     # model_name = "ecfp"
     # model_name = "chemprop"
 
-    n_components = 16
-    # n_components = 32
+    # n_components = 16
+    n_components = 32
 
     # dimensionality_reduction_method = None
     # dimensionality_reduction_method_kwargs = None
@@ -141,8 +146,8 @@ def main():
     if subfolder:
         wandb_extra_configs["subfolder"] = subfolder
 
-    if compound_name:
-        wandb_extra_configs["compound_name"] = compound_name
+    # if compound_name:
+    #     wandb_extra_configs["compound_name"] = compound_name
 
     cluster_runner = ClusterRunner(
         wandb_project_name=wandb_project_name,

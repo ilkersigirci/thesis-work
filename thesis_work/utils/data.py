@@ -65,14 +65,14 @@ def load_ataberk(
 
     if subfolder == "chembl27":
         check_initialization_params(
-            attr=compound_name, accepted_list=["abl1", "reni", "thb"]
+            attr=compound_name, accepted_list=["abl1", "renin", "thb"]
         )
 
         df = df.drop(columns=["ChEMBL"], axis=1)
 
     elif subfolder == "dude":
         check_initialization_params(
-            attr=compound_name, accepted_list=["abl1", "reni", "thb"]
+            attr=compound_name, accepted_list=["abl1", "renin", "thb"]
         )
 
     elif subfolder == "zinc15":

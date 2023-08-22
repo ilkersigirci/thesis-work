@@ -1,0 +1,65 @@
+#
+# Stage: staging
+#
+FROM nvidia/cuda:11.8.0-devel-ubuntu22.04 as conda11.8-python
+
+ENV PYTHONUNBUFFERED=1
+
+# SYSTEM
+RUN apt-get update --yes --quiet && DEBIAN_FRONTEND=noninteractive apt-get install --yes --quiet --no-install-recommends \
+    software-properties-common \
+    build-essential make apt-utils \
+    wget curl vim git ca-certificates kmod \
+    # nvidia-driver-470.103.01 \
+ && rm -rf /var/lib/apt/lists/*
+
+# PYTHON 3.10
+RUN add-apt-repository --yes ppa:deadsnakes/ppa && apt-get update --yes --quiet
+RUN DEBIAN_FRONTEND=noninteractive apt-get install --yes --quiet --no-install-recommends \
+    python3.10 \
+    python3.10-dev \
+    python3.10-distutils \
+    python3.10-lib2to3 \
+    python3.10-gdbm \
+    python3.10-tk \
+    pip
+
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 999 \
+    && update-alternatives --config python3 && ln -s /usr/bin/python3 /usr/bin/python
+
+RUN pip install --upgrade pip
+
+## ANACONDA
+# RUN wget -O /tmp/anaconda.sh https://repo.anaconda.com/archive/Anaconda3-2022.10-Linux-x86_64.sh \
+#     && bash /tmp/anaconda.sh -b -p /anaconda \
+#     && eval "$(/anaconda/bin/conda shell.bash hook)" \
+#     && conda init \
+#     && conda update -n base -c defaults conda
+
+
+#
+# Stage: development
+#
+FROM conda11.8-python as development
+
+ENV \
+    POETRY_NO_INTERACTION=1 \
+    POETRY_INSTALLER_MAX_WORKERS=10 \
+    POETRY_CACHE_DIR='/tmp/pypoetry' \
+    POETRY_VIRTUALENVS_IN_PROJECT=true
+
+WORKDIR /thesis-work
+
+COPY ./poetry.lock ./pyproject.toml ./
+
+# NOTE: Gives error even if the line is successfully executed
+# RUN pip install poetry==1.5.1 && poetry install --no-root
+
+RUN pip install poetry==1.5.1
+RUN --mount=type=cache,target=$POETRY_CACHE_DIR poetry install --no-root || true
+
+COPY . .
+
+RUN --mount=type=cache,target=$POETRY_CACHE_DIR poetry install || true
+
+ENTRYPOINT ["poetry", "run"]

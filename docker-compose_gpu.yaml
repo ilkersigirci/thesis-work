@@ -1,0 +1,35 @@
+version: "3.9"
+name: thesis-work-gpu
+
+networks:
+  thesis_work_gpu:
+      name: thesis_work_gpu
+      driver: bridge
+
+services:
+  thesis-work-gpu:
+    container_name: thesis-work-gpu
+    image: thesis-work-gpu:latest
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile_gpu
+      target: development
+    command: sleep infinity # To make sure that the container does not exit
+    restart: "no"
+    networks:
+      - thesis_work_gpu
+    volumes:
+      - ./thesis_work:/thesis-work/thesis_work
+      - ./notebooks:/thesis-work/notebooks
+      - ./experiments:/thesis-work/experiments
+    # env_file:
+    #   - .env
+    # environment:
+    #   NODE_ENV: production
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 2
+              capabilities: [gpu]

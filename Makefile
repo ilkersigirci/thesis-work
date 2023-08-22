@@ -242,3 +242,10 @@ run-file: ## Run python file with python with exported env variables
 
 gui: ## Run GUI with streamlit
 	streamlit run thesis_work/gui/index.py
+
+docker-gpu-commands:
+	# docker compose -f docker-compose_gpu.yaml build thesis-work-gpu
+	# docker compose -f docker-compose_gpu.yaml up thesis-work-gpu -d
+	# docker compose -f docker-compose_gpu.yaml down
+
+	# docker exec -it <container_id> /bin/bash

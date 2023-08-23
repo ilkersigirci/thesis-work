@@ -1,3 +1,73 @@
+"""
+- Renin + HDBCAN + ECFP = NOT WORKING
+```
+File "/thesis-work/.venv/lib/python3.10/site-packages/cuml/internals/api_decorators.py", line 188, in wrapper
+    ret = func(*args, **kwargs)
+  File "/thesis-work/.venv/lib/python3.10/site-packages/cuml/internals/api_decorators.py", line 393, in dispatch
+    return self.dispatch_func(func_name, gpu_func, *args, **kwargs)
+  File "/thesis-work/.venv/lib/python3.10/site-packages/cuml/internals/api_decorators.py", line 190, in wrapper
+    return func(*args, **kwargs)
+  File "base.pyx", line 665, in cuml.internals.base.UniversalBase.dispatch_func
+  File "hdbscan.pyx", line 842, in cuml.cluster.hdbscan.hdbscan.HDBSCAN.fit
+RuntimeError: CUDA error encountered at: file=/__w/cuml/cuml/python/_skbuild/linux-x86_64-3.10/cmake-build/_deps/raft-src/cpp/include/raft/util/cudart_utils.hpp line=174: call='cudaMemcpyAsync(d_ptr1, d_ptr2, len * sizeof(Type), cudaMemcpyDeviceToDevice, stream)', Reason=cudaErrorInvalidValue:invalid argument
+Obtained 40 stack frames
+```
+
+
+- THB + BUTINA  = NOT WORKING
+```
+File "/thesis-work/thesis_work/clustering/evaluation.py", line 108, in homogeneity_index
+    return homogeneity_score(target, labels)
+  File "/thesis-work/.venv/lib/python3.10/site-packages/cuml/internals/api_decorators.py", line 190, in wrapper
+    return func(*args, **kwargs)
+  File "homogeneity_score.pyx", line 81, in cuml.metrics.cluster.homogeneity_score.cython_homogeneity_score
+  File "/thesis-work/.venv/lib/python3.10/site-packages/cuml/internals/api_decorators.py", line 188, in wrapper
+    ret = func(*args, **kwargs)
+  File "utils.pyx", line 50, in cuml.metrics.cluster.utils.prepare_cluster_metric_inputs
+  File "/thesis-work/.venv/lib/python3.10/site-packages/cuml/internals/api_decorators.py", line 188, in wrapper
+    ret = func(*args, **kwargs)
+  File "/thesis-work/.venv/lib/python3.10/site-packages/cuml/prims/label/classlabels.py", line 153, in make_monotonic
+    map_labels(
+  File "cupy/_core/raw.pyx", line 89, in cupy._core.raw.RawKernel.__call__
+  File "cupy/cuda/function.pyx", line 223, in cupy.cuda.function.Function.__call__
+  File "cupy/cuda/function.pyx", line 205, in cupy.cuda.function._launch
+  File "cupy_backends/cuda/api/driver.pyx", line 253, in cupy_backends.cuda.api.driver.launchKernel
+  File "cupy_backends/cuda/api/driver.pyx", line 60, in cupy_backends.cuda.api.driver.check_status
+cupy_backends.cuda.api.driver.CUDADriverError: CUDA_ERROR_INVALID_VALUE: invalid argument
+Traceback (most recent call last):
+  File "/thesis-work/experiments/generic_loop.py", line 236, in <module>
+    main()
+  File "/thesis-work/experiments/generic_loop.py", line 222, in main
+    cluster_runner.run_multiple_clustering(
+  File "/thesis-work/thesis_work/clustering/runner.py", line 564, in run_multiple_clustering
+    self.run_clustering()
+  File "/thesis-work/thesis_work/clustering/runner.py", line 526, in run_clustering
+    self._run_clustering()
+  File "/thesis-work/thesis_work/clustering/runner.py", line 510, in _run_clustering
+    self.evaluate_clusters(cluster_labels=cluster_labels, inertia=inertia)
+  File "/thesis-work/thesis_work/clustering/runner.py", line 462, in evaluate_clusters
+    score = clustering_evaluation_method.function(
+  File "/thesis-work/thesis_work/clustering/evaluation.py", line 108, in homogeneity_index
+    return homogeneity_score(target, labels)
+  File "/thesis-work/.venv/lib/python3.10/site-packages/cuml/internals/api_decorators.py", line 190, in wrapper
+    return func(*args, **kwargs)
+  File "homogeneity_score.pyx", line 81, in cuml.metrics.cluster.homogeneity_score.cython_homogeneity_score
+  File "/thesis-work/.venv/lib/python3.10/site-packages/cuml/internals/api_decorators.py", line 188, in wrapper
+    ret = func(*args, **kwargs)
+  File "utils.pyx", line 50, in cuml.metrics.cluster.utils.prepare_cluster_metric_inputs
+  File "/thesis-work/.venv/lib/python3.10/site-packages/cuml/internals/api_decorators.py", line 188, in wrapper
+    ret = func(*args, **kwargs)
+  File "/thesis-work/.venv/lib/python3.10/site-packages/cuml/prims/label/classlabels.py", line 153, in make_monotonic
+    map_labels(
+  File "cupy/_core/raw.pyx", line 89, in cupy._core.raw.RawKernel.__call__
+  File "cupy/cuda/function.pyx", line 223, in cupy.cuda.function.Function.__call__
+  File "cupy/cuda/function.pyx", line 205, in cupy.cuda.function._launch
+  File "cupy_backends/cuda/api/driver.pyx", line 253, in cupy_backends.cuda.api.driver.launchKernel
+  File "cupy_backends/cuda/api/driver.pyx", line 60, in cupy_backends.cuda.api.driver.check_status
+cupy_backends.cuda.api.driver.CUDADriverError: CUDA_ERROR_INVALID_VALUE: invalid argument
+```
+"""
+
 import logging
 import os
 import time
@@ -27,65 +97,70 @@ def main():  # noqa: C901, PLR0912, PLR0915
     random_state = 42
     logged_plot_type = "static"
 
-    device = "cuda"
-    # device = "cpu"
+    # device = "cuda"
+    device = "cpu"
 
-    sample_size = None
+    # sample_size = None
     # sample_size = 300
     # sample_size = 2_000
+    sample_size = 21996
     # sample_size = 25_000
     # sample_size = 40_000
 
     ############################## DATA LOADING ##############################
 
-    # protein_types = [
-    #     "gpcr",
-    #     "ionchannel",
-    #     "kinase",
-    #     "nuclearreceptor",
-    #     "protease",
-    #     "transporter",
-    # ]
-    # protein_types.sort()
-    protein_types = None
+    protein_types = [
+        "gpcr",
+        "ionchannel",
+        "kinase",
+        "nuclearreceptor",
+        "protease",
+        "transporter",
+    ]
+    protein_types.sort()
+    # protein_types = None
 
-    # smiles_df = load_protein_family_multiple_interacted(
-    #     protein_types=protein_types,
-    #     sample_size=sample_size,
-    #     random_state=random_state,
-    #     convert_labels=False,
-    # )
+    smiles_df = load_protein_family_multiple_interacted(
+        protein_types=protein_types,
+        sample_size=sample_size,
+        random_state=random_state,
+        convert_labels=False,
+    )
 
     # smiles_df = load_related_work(sample_size=sample_size, random_state=random_state)
 
-    subfolder = "chembl27"
+    subfolder = None
+    # subfolder = "chembl27"
     # subfolder = "dude"
+
+    compound_name = None
     # compound_name = "abl1"
     # compound_name = "renin"
-    compound_name = "thb"
+    # compound_name = "thb"
 
     # subfolder = "zinc15"
-    # compound_name = None
 
-    smiles_df = load_ataberk(
-        subfolder=subfolder,
-        compound_name=compound_name,
-        return_vectors=False,
-        sample_size=sample_size,
-        random_state=random_state,
-    )
+    # smiles_df = load_ataberk(
+    #     subfolder=subfolder,
+    #     compound_name=compound_name,
+    #     return_vectors=False,
+    #     sample_size=sample_size,
+    #     random_state=random_state,
+    # )
 
     ############################## OTHER PARAMS ##############################
 
-    wandb_project_name = "ataberk"
+    # wandb_project_name = "ataberk"
+    wandb_project_name = "6-protein-family-actives"
 
     model_with_dims = {
-        # "DeepChem/ChemBERTa-77M-MTR": 384,
         # "DeepChem/ChemBERTa-77M-MLM": 384,
-        "chemprop": 25,
+        # "DeepChem/ChemBERTa-77M-MTR": 384,
+        # "chemprop": 25,
         "ecfp": 2048,
     }
 
+    # dimensionality_reduction_methods = ["PCA", "UMAP"]
     dimensionality_reduction_methods = [None, "PCA", "UMAP"]
     n_components_list = [16, 32]
 
@@ -95,16 +170,16 @@ def main():  # noqa: C901, PLR0912, PLR0915
         #     "n_clusters": 3,
         #     "n_init": 1,
         # },
-        # "HDBSCAN": {
-        #     "min_cluster_size": 5,
-        #     "metric": "euclidean",
-        #     # "metric": "jaccard",  # NOTE: Doesn't work
-        # },
-        "AGGLOMERATIVE": {
-            "n_clusters": 3,
-            "affinity": "euclidean",
-            "linkage": "single",
+        "HDBSCAN": {
+            "min_cluster_size": 5,
+            "metric": "euclidean",
+            # "metric": "jaccard",  # NOTE: Doesn't work
         },
+        # "AGGLOMERATIVE": {
+        #     "n_clusters": 3,
+        #     "affinity": "euclidean",
+        #     "linkage": "single",
+        # },
         # "BUTINA": {
         #     # "distance_metric": "euclidean",
         #     "distance_metric": "jaccard",
@@ -185,18 +260,16 @@ def main():  # noqa: C901, PLR0912, PLR0915
                             # "metric": "jaccard",
                         }
 
-                    wandb_run_name = f"""
-                        {clustering_method}_
-                        {model_name if "/" not in model_name else model_name.split("/")[1]}
-                    """
+                    # if dimensionality_reduction_method in ["PCA", "UMAP"]:
+                    #     dimensionality_reduction_method_kwargs["n_components"] = n_components
+
+                    wandb_run_name = f"{clustering_method}_{model_name.split('/')[-1]}"
 
                     if dimensionality_reduction_method is not None:
                         wandb_run_name += f"_{dimensionality_reduction_method}"
 
-                    if dimensionality_reduction_method_kwargs is not None:
-                        wandb_run_name += (
-                            f"_{dimensionality_reduction_method_kwargs['n_components']}"
-                        )
+                        if dimensionality_reduction_method_kwargs is not None:
+                            wandb_run_name += f"_{dimensionality_reduction_method_kwargs['n_components']}"
 
                     wandb_extra_configs = {}
 

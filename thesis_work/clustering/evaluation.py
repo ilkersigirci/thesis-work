@@ -81,6 +81,13 @@ def completeness_index(target, labels, device="cuda"):
     completeness_score = (
         cuml_completeness_score if device == "cuda" else sklearn_completeness_score
     )
+
+    # try:
+    #     return completeness_score(target, labels)
+    # except cupy.cuda.driver.CUDADriverError as e:
+    #     logger.error(f"Caught a CUDADriverError: {e}")
+    #     return None
+
     return completeness_score(target, labels)
 
 
@@ -97,6 +104,7 @@ def homogeneity_index(target, labels, device="cuda"):
     homogeneity_score = (
         cuml_homogeneity_score if device == "cuda" else sklearn_homogeneity_score
     )
+
     return homogeneity_score(target, labels)
 
 

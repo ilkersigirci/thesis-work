@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union
 
+import cupy
 import numpy as np
 import pandas as pd
 import wandb
@@ -459,11 +460,28 @@ class ClusterRunner:
                 if target.dtype == "object":
                     target = pd.factorize(target)[0]
 
-            score = clustering_evaluation_method.function(
-                target=target,
-                labels=cluster_labels,
-                device=self.device,
-            )
+            device = self.device
+
+            # FIXME: Fix for chembl27 dataset. Why this is happening ?
+            # if self.clustering_method == "BUTINA" and self.device == "cuda":
+            #     device = "cpu"
+            #     logger.info(
+            #         "cuML evaluation metrics doesn't work on BUTINA somehow."
+            #         "Hence, using CPU for calculating metrics."
+            #     )
+
+            try:
+                score = clustering_evaluation_method.function(
+                    target=target,
+                    labels=cluster_labels,
+                    device=device,
+                )
+            except cupy.cuda.driver.CUDADriverError as e:
+                score = logger.error(
+                    f"{clustering_evaluation_method.name} can't be calculated,"
+                    f"because of a CUDADriverError: {e}"
+                )
+                continue
 
             if score is not None:
                 logged_data = {clustering_evaluation_method.name: score}

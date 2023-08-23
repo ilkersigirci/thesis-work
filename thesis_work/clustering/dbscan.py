@@ -63,13 +63,16 @@ def apply_hdbscan(  # noqa: PLR0913
 
     HDBSCAN = cuHDBSCAN if device == "cuda" else skHDBSCAN
 
-    if metric == "jaccard":
+    if metric not in ["euclidean", "l2"]:
         if device == "cuda":
-            raise ValueError("cuML HDBSCAN doesn't support jaccard metric.")
-        # elif device == "cpu":
-        #     raise ValueError(
-        #         "sklearn HDBSCAN doesn't work with jaccard metric somehow."
-        #     )
+            github_issue_link = "https://github.com/rapidsai/cuml/pull/5492"
+            raise ValueError(
+                f"Metric {metric} not supported by cuML HDBSCAN. See: {github_issue_link}"
+            )
+        else:
+            raise ValueError(
+                "sklearn HDBSCAN doesn't work with jaccard metric somehow."
+            )
 
     # CPU only params: algorithm: str = "auto"
     clustering_model = HDBSCAN(

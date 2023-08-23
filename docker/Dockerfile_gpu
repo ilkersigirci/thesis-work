@@ -10,7 +10,7 @@ RUN apt-get update --yes --quiet && DEBIAN_FRONTEND=noninteractive apt-get insta
     software-properties-common \
     build-essential make apt-utils \
     wget curl vim git ca-certificates kmod \
-    # nvidia-driver-470.103.01 \
+    htop nvtop \
  && rm -rf /var/lib/apt/lists/*
 
 # PYTHON 3.10
@@ -41,6 +41,8 @@ RUN pip install --upgrade pip
 # Stage: development
 #
 FROM conda11.8-python as development
+ARG PUID
+ARG PGID
 
 ENV \
     POETRY_NO_INTERACTION=1 \
@@ -61,5 +63,9 @@ RUN --mount=type=cache,target=$POETRY_CACHE_DIR poetry install --no-root || true
 COPY . .
 
 RUN --mount=type=cache,target=$POETRY_CACHE_DIR poetry install || true
+
+RUN addgroup --gid $PGID user
+RUN adduser --disabled-password --gecos '' --uid $PUID --gid $PGID user
+USER user
 
 ENTRYPOINT ["poetry", "run"]

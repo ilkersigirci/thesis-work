@@ -15,6 +15,9 @@ services:
       context: .
       dockerfile: ./docker/Dockerfile_gpu
       target: development
+      args:
+        PUID: ${PUID}
+        PGID: ${PGID}
     command: sleep infinity # To make sure that the container does not exit
     restart: "no"
     networks:
@@ -31,7 +34,12 @@ services:
     #   NODE_ENV: production
     deploy:
       resources:
+        limits:
+          cpus: '0.7' # NOTE: Doesn't work
+          # memory: 256G
         reservations:
+          cpus: '0.7' # NOTE: Doesn't work
+          # memory: 256G
           devices:
             - driver: nvidia
               count: 2

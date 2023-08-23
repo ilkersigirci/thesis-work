@@ -61,8 +61,8 @@ def main():  # noqa: C901, PLR0912, PLR0915
     subfolder = "chembl27"
     # subfolder = "dude"
     # compound_name = "abl1"
-    compound_name = "renin"
-    # compound_name = "thb"
+    # compound_name = "renin"
+    compound_name = "thb"
 
     # subfolder = "zinc15"
     # compound_name = None
@@ -80,9 +80,9 @@ def main():  # noqa: C901, PLR0912, PLR0915
     wandb_project_name = "ataberk"
 
     model_with_dims = {
-        "DeepChem/ChemBERTa-77M-MTR": 384,
+        # "DeepChem/ChemBERTa-77M-MTR": 384,
         # "DeepChem/ChemBERTa-77M-MLM": 384,
-        # "chemprop": 25,
+        "chemprop": 25,
         "ecfp": 2048,
     }
 
@@ -95,21 +95,21 @@ def main():  # noqa: C901, PLR0912, PLR0915
         #     "n_clusters": 3,
         #     "n_init": 1,
         # },
-        # "BUTINA": {
-        #     # "distance_metric": "euclidean",
-        #     "distance_metric": "jaccard",
-        #     "threshold": 0.35,
+        # "HDBSCAN": {
+        #     "min_cluster_size": 5,
+        #     "metric": "euclidean",
+        #     # "metric": "jaccard",  # NOTE: Doesn't work
         # },
-        "HDBSCAN": {
-            "min_cluster_size": 5,
-            "metric": "euclidean",
-            # "metric": "jaccard",  # NOTE: Doesn't work
-        },
         "AGGLOMERATIVE": {
             "n_clusters": 3,
             "affinity": "euclidean",
             "linkage": "single",
         },
+        # "BUTINA": {
+        #     # "distance_metric": "euclidean",
+        #     "distance_metric": "jaccard",
+        #     "threshold": 0.35,
+        # },
     }
 
     if compound_name is not None:

@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 def _sample_data(
     df: pd.DataFrame, sample_size: Optional[int] = None, random_state: int = 42
 ):
+    """Samples data while preserving label ratio."""
     if sample_size is None:
         return df
 
@@ -29,7 +30,33 @@ def _sample_data(
         )
         sample_size = len(df)
 
-    df = df.sample(n=sample_size, random_state=random_state)
+    unique_labels = df["labels"].unique()
+
+    # If df has labels column, then sample by preserving label 0 and 1 ratio
+    if len(unique_labels) == 1:
+        return df.sample(n=sample_size, random_state=random_state)
+
+    # If there are multiple unique labels, sample while preserving ratio
+    label_counts = df["labels"].value_counts()
+    label_ratios = label_counts / label_counts.sum()
+    sample_sizes = (label_ratios * sample_size).astype(int)
+
+    dfs = []
+    for label in unique_labels:
+        df_label = df[df["labels"] == label]
+        sample_size_label = sample_sizes[label]
+        if sample_size_label > len(df_label):
+            logger.warning(
+                f"Sample size for label {label} is greater than number of data is {len(df_label)}."
+                f"Hence, sample size is set to {len(df_label)}."
+            )
+            sample_size_label = len(df_label)
+        df_label = df_label.sample(
+            n=sample_size_label, random_state=random_state, replace=False
+        ).reset_index(drop=True)
+        dfs.append(df_label)
+
+    df = pd.concat(dfs, axis=0, ignore_index=True)
 
     return df
 
@@ -139,25 +166,31 @@ def load_protein_family_multiple_interacted(
     """
     result = pd.DataFrame()
 
+    protein_types_actives_mapping = {
+        "gpcr": 36_924,
+        "ionchannel": 5_996,
+        "kinase": 35_531,
+        "nuclearreceptor": 5_099,
+        "protease": 15_718,
+        "transporter": 3_666,
+    }
+
+    maximum_sample_size = min(protein_types_actives_mapping.values())
+
     if protein_types is None:
-        protein_types = [
-            "gpcr",
-            "ionchannel",
-            "kinase",
-            "nuclearreceptor",
-            "protease",
-            "transporter",
-        ]
+        protein_types = list(protein_types_actives_mapping.keys())
+
     protein_types.sort()
 
-    each_sample_size = sample_size / len(protein_types)
+    each_sample_size = sample_size // len(protein_types)
 
-    if isinstance(each_sample_size, float):
-        each_sample_size = int(each_sample_size)
+    if each_sample_size > maximum_sample_size:
         logger.info(
-            f"Sample size: {sample_size} is not divisible by number of protein types."
-            f"Hence, each protein type will be sampled by {each_sample_size}"
+            f"Each sample size: {each_sample_size} is greater than the lower value in "
+            "the protein_types_actives_mapping. Hence, each protein type will be "
+            f"sampled by {maximum_sample_size}"
         )
+        each_sample_size = maximum_sample_size
 
     for protein_type in protein_types:
         data = load_protein_family(

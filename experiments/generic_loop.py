@@ -14,9 +14,9 @@ from thesis_work.utils.data import (
 logger = logging.getLogger(__name__)
 
 
-def main():  # noqa: C901, PLR0912
+def main():  # noqa: C901, PLR0912, PLR0915
     # NOTE: To disable all wandb logging
-    os.environ["WANDB_MODE"] = "disabled"
+    # os.environ["WANDB_MODE"] = "disabled"
 
     # NOTE: Needed for scalene profiling
     # os.environ["WANDB__EXECUTABLE"] = "/home/ilker/miniconda3/envs/thesis-work/bin/python"
@@ -30,8 +30,8 @@ def main():  # noqa: C901, PLR0912
     device = "cuda"
     # device = "cpu"
 
-    # sample_size = None
-    sample_size = 300
+    sample_size = None
+    # sample_size = 300
     # sample_size = 2_000
     # sample_size = 25_000
     # sample_size = 40_000
@@ -60,8 +60,8 @@ def main():  # noqa: C901, PLR0912
 
     subfolder = "chembl27"
     # subfolder = "dude"
-    compound_name = "abl1"
-    # compound_name = "renin"
+    # compound_name = "abl1"
+    compound_name = "renin"
     # compound_name = "thb"
 
     # subfolder = "zinc15"
@@ -77,13 +77,12 @@ def main():  # noqa: C901, PLR0912
 
     ############################## OTHER PARAMS ##############################
 
-    # wandb_project_name = "ataberk"
-    wandb_project_name = "loop-test"
+    wandb_project_name = "ataberk"
 
     model_with_dims = {
         "DeepChem/ChemBERTa-77M-MTR": 384,
         # "DeepChem/ChemBERTa-77M-MLM": 384,
-        "chemprop": 25,
+        # "chemprop": 25,
         "ecfp": 2048,
     }
 
@@ -91,11 +90,11 @@ def main():  # noqa: C901, PLR0912
     n_components_list = [16, 32]
 
     clustering_method_kwargs_mapping = {
-        "K-MEANS": {
-            "init_method": "k-means++",
-            "n_clusters": 3,
-            "n_init": 1,
-        },
+        # "K-MEANS": {
+        #     "init_method": "k-means++",
+        #     "n_clusters": 3,
+        #     "n_init": 1,
+        # },
         # "BUTINA": {
         #     # "distance_metric": "euclidean",
         #     "distance_metric": "jaccard",
@@ -113,10 +112,10 @@ def main():  # noqa: C901, PLR0912
         },
     }
 
-    # if compound_name is not None:
-    #     wandb_project_name += f"-{subfolder}-{compound_name}"
-    # elif subfolder is not None:
-    #     wandb_project_name += f"-{subfolder}"
+    if compound_name is not None:
+        wandb_project_name += f"-{subfolder}-{compound_name}"
+    elif subfolder is not None:
+        wandb_project_name += f"-{subfolder}"
 
     wandb_extra_configs = {}
 

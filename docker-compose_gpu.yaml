@@ -10,6 +10,7 @@ services:
   thesis-work-gpu:
     container_name: thesis-work-gpu
     image: thesis-work-gpu:latest
+    shm_size: 64gb # To avoid `RuntimeError: DataLoader worker (pid 13) is killed by signal`. Should be always less than total RAM
     build:
       context: .
       dockerfile: ./docker/Dockerfile_gpu
@@ -19,9 +20,11 @@ services:
     networks:
       - thesis_work_gpu
     volumes:
-      - ./thesis_work:/thesis-work/thesis_work
-      - ./notebooks:/thesis-work/notebooks
+      - ./docker-compose_gpu.yaml:/thesis-work/docker-compose_gpu.yaml
+      - ./docker:/thesis-work/docker
       - ./experiments:/thesis-work/experiments
+      - ./notebooks:/thesis-work/notebooks
+      - ./thesis_work:/thesis-work/thesis_work
     # env_file:
     #   - .env
     # environment:

@@ -18,10 +18,6 @@ htmlcov/
 .venv
 venv
 
-docs
-tests
-bert-loves-chemistry
-
 # Bert training files
 notebooks
 outputs
@@ -29,11 +25,16 @@ results
 runs
 training_files
 
-data
-temp
+
+# data
+docs
+tests
 bert-loves-chemistry
+molbert_repo
+**/vectors
+temp
 # outputs
 # results
 # runs
 # cache_dir
-# wandb
+wandb

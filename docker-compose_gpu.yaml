@@ -34,13 +34,13 @@ services:
     #   NODE_ENV: production
     deploy:
       resources:
-        limits:
-          cpus: '0.7' # NOTE: Doesn't work
-          # memory: 256G
         reservations:
-          cpus: '0.7' # NOTE: Doesn't work
+          # cpus: '0.7'
           # memory: 256G
           devices:
             - driver: nvidia
               count: 2
               capabilities: [gpu]
+        # limits: # NOTE: Doesn't work
+        #   cpus: '0.7' 
+        #   memory: 256G

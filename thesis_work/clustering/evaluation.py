@@ -7,13 +7,18 @@ NOTE:
 import logging
 from dataclasses import dataclass
 
+import numpy as np
+import pandas as pd
+import seaborn as sns
 from cuml.metrics.cluster import (
     adjusted_rand_score as cuml_adjusted_rand_score,
     completeness_score as cuml_completeness_score,
     homogeneity_score as cuml_homogeneity_score,
     mutual_info_score as cuml_mutual_info_score,
+    silhouette_samples as cuml_silhouette_samples,
     silhouette_score as cuml_silhouette_score,
 )
+from matplotlib import cm
 from sklearn.metrics import (
     adjusted_rand_score as sklearn_adjusted_rand_score,
     calinski_harabasz_score,
@@ -21,6 +26,7 @@ from sklearn.metrics import (
     davies_bouldin_score,
     homogeneity_score as sklearn_homogeneity_score,
     mutual_info_score as sklearn_mutual_info_score,
+    silhouette_samples as sklearn_silhouette_samples,
     silhouette_score as sklearn_silhouette_score,
 )
 
@@ -170,6 +176,59 @@ def silhouette_index(target, labels, device="cuda"):
 # TODO: Implement quality partition index
 # def quality_partition_index(target, labels, device="cuda"):
 #     pass
+
+
+def silhouette_samples_plot(X, cluster_labels, device="cuda"):
+    """
+    Adapted from https://scikit-learn.org/stable/auto_examples/cluster/plot_kmeans_silhouette_analysis.html
+    """
+    check_device(device=device)
+
+    silhouette_score = (
+        cuml_silhouette_score if device == "cuda" else sklearn_silhouette_score
+    )
+
+    silhouette_samples = (
+        cuml_silhouette_samples if device == "cuda" else sklearn_silhouette_samples
+    )
+
+    sns.set_style("whitegrid")
+    sample_df = pd.DataFrame(
+        silhouette_samples(X, cluster_labels), columns=["Silhouette"]
+    )
+    sample_df["Cluster"] = cluster_labels
+    n_clusters = max(cluster_labels + 1)
+    color_list = [cm.nipy_spectral(float(i) / n_clusters) for i in range(0, n_clusters)]
+    ax = sns.scatterplot()
+    ax.set_xlim([-0.1, 1])
+    ax.set_ylim([0, len(X) + (n_clusters + 1) * 10])
+    silhouette_avg = silhouette_score(X, cluster_labels)
+    y_lower = 10
+    unique_cluster_ids = sorted(sample_df.Cluster.unique())
+
+    for i in unique_cluster_ids:
+        cluster_df = sample_df.query("Cluster == @i")
+        cluster_size = len(cluster_df)
+        y_upper = y_lower + cluster_size
+        ith_cluster_silhouette_values = cluster_df.sort_values(
+            "Silhouette"
+        ).Silhouette.values
+        color = color_list[i]
+        ax.fill_betweenx(
+            np.arange(y_lower, y_upper),
+            0,
+            ith_cluster_silhouette_values,
+            facecolor=color,
+            edgecolor=color,
+            alpha=0.7,
+        )
+        ax.text(-0.05, y_lower + 0.5 * cluster_size, str(i), fontsize="small")
+        y_lower = y_upper + 10
+    ax.axvline(silhouette_avg, color="red", ls="--")
+    ax.set_xlabel("Silhouette Score")
+    ax.set_ylabel("Cluster")
+    ax.set(yticklabels=[])
+    ax.yaxis.grid(False)
 
 
 CLUSTERING_EVALUATION_METRICS = [

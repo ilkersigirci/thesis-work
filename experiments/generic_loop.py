@@ -97,67 +97,67 @@ def main():  # noqa: C901, PLR0912, PLR0915
     random_state = 42
     logged_plot_type = "static"
 
-    # device = "cuda"
-    device = "cpu"
+    device = "cuda"
+    # device = "cpu"
 
-    # sample_size = None
+    sample_size = None
     # sample_size = 300
     # sample_size = 2_000
-    sample_size = 21996
+    # sample_size = 21996
     # sample_size = 25_000
     # sample_size = 40_000
 
     ############################## DATA LOADING ##############################
 
-    protein_types = [
-        "gpcr",
-        "ionchannel",
-        "kinase",
-        "nuclearreceptor",
-        "protease",
-        "transporter",
-    ]
-    protein_types.sort()
-    # protein_types = None
+    # protein_types = [
+    #     "gpcr",
+    #     "ionchannel",
+    #     "kinase",
+    #     "nuclearreceptor",
+    #     "protease",
+    #     "transporter",
+    # ]
+    # protein_types.sort()
+    protein_types = None
 
-    smiles_df = load_protein_family_multiple_interacted(
-        protein_types=protein_types,
-        sample_size=sample_size,
-        random_state=random_state,
-        convert_labels=False,
-    )
+    # smiles_df = load_protein_family_multiple_interacted(
+    #     protein_types=protein_types,
+    #     sample_size=sample_size,
+    #     random_state=random_state,
+    #     convert_labels=False,
+    # )
 
     # smiles_df = load_related_work(sample_size=sample_size, random_state=random_state)
 
-    subfolder = None
+    # subfolder = None
     # subfolder = "chembl27"
     # subfolder = "dude"
 
-    compound_name = None
+    # compound_name = None
     # compound_name = "abl1"
     # compound_name = "renin"
     # compound_name = "thb"
 
-    # subfolder = "zinc15"
+    compound_name = "zinc15-minor-targets"
+    subfolder = "zinc15"
 
-    # smiles_df = load_ataberk(
-    #     subfolder=subfolder,
-    #     compound_name=compound_name,
-    #     return_vectors=False,
-    #     sample_size=sample_size,
-    #     random_state=random_state,
-    # )
+    smiles_df = load_ataberk(
+        subfolder=subfolder,
+        compound_name=compound_name,
+        return_vectors=False,
+        sample_size=sample_size,
+        random_state=random_state,
+    )
 
     ############################## OTHER PARAMS ##############################
 
-    # wandb_project_name = "ataberk"
-    wandb_project_name = "6-protein-family-actives"
+    wandb_project_name = "ataberk"
+    # wandb_project_name = "6-protein-family-2-step"
 
     model_with_dims = {
-        # "DeepChem/ChemBERTa-77M-MLM": 384,
         # "DeepChem/ChemBERTa-77M-MTR": 384,
-        # "chemprop": 25,
-        "ecfp": 2048,
+        "chemprop": 25,
+        # "ecfp": 2048,
     }
 
     # dimensionality_reduction_methods = ["PCA", "UMAP"]
@@ -165,21 +165,21 @@ def main():  # noqa: C901, PLR0912, PLR0915
     n_components_list = [16, 32]
 
     clustering_method_kwargs_mapping = {
-        # "K-MEANS": {
-        #     "init_method": "k-means++",
-        #     "n_clusters": 3,
-        #     "n_init": 1,
-        # },
-        "HDBSCAN": {
+        "K-MEANS": {
+            "init_method": "k-means++",
+            "n_clusters": 3,
+            "n_init": 1,
+        },
+        "AGGLOMERATIVE": {
+            "n_clusters": 3,
+            "affinity": "euclidean",
+            "linkage": "single",
+        },
+        "HDBSCAN": {  # NOTE: Not working with ECFP at all !!
             "min_cluster_size": 5,
             "metric": "euclidean",
             # "metric": "jaccard",  # NOTE: Doesn't work
         },
-        # "AGGLOMERATIVE": {
-        #     "n_clusters": 3,
-        #     "affinity": "euclidean",
-        #     "linkage": "single",
-        # },
         # "BUTINA": {
         #     # "distance_metric": "euclidean",
         #     "distance_metric": "jaccard",
@@ -199,18 +199,21 @@ def main():  # noqa: C901, PLR0912, PLR0915
 
     ########################## INNER MULTIPLE RUN PARAMS #########################
     # n_clusters = None
-    # n_clusters = list(range(2, 100, 3))
-    n_clusters = list(range(5, 100, 5))
+    # n_clusters = list(range(2, 50, 2))
+    # n_clusters = list(range(5, 100, 5))
+    n_clusters = list(range(10, 1000, 20))
 
     # thresholds = None
     # thresholds = [0.5, 0.8]
     thresholds = [0.2, 0.35, 0.5, 0.8]
 
     # min_samples = None
-    min_samples = list(range(5, 100, 5))
+    # min_samples = list(range(5, 100, 5))
+    min_samples = list(range(10, 1000, 20))
 
     # min_cluster_sizes = None
-    min_cluster_sizes = list(range(5, 100, 5))
+    # min_cluster_sizes = list(range(5, 100, 5))
+    min_cluster_sizes = list(range(10, 1000, 20))
 
     input_clustering_param_dict = {
         "n_clusters": n_clusters,

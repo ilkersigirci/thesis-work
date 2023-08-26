@@ -68,7 +68,7 @@ def _merge_with_vectors(df: pd.DataFrame, vectors: pd.DataFrame):
 
 def load_ataberk(
     subfolder: int,
-    compound_name: Optional[str] = None,
+    compound_name: str,
     return_vectors: bool = False,
     sample_size: Optional[int] = None,
     random_state: int = 42,
@@ -79,11 +79,10 @@ def load_ataberk(
         attr=subfolder, accepted_list=["chembl27", "dude", "zinc15"]
     )
 
-    if compound_name is None and subfolder != "zinc15":
-        raise ValueError("Compound name must be given.")
-
-    if subfolder == "zinc15":
-        compound_name = "zinc15-minor-targets"
+    check_initialization_params(
+        attr=compound_name,
+        accepted_list=["abl1", "renin", "thb", "zinc15-minor-targets"],
+    )
 
     data_root_path = DATA_PATH / "ataberk" / subfolder
     data_smiles_path = data_root_path / "smiles" / f"{compound_name}.csv"
@@ -91,19 +90,10 @@ def load_ataberk(
     df = pd.read_csv(data_smiles_path)
 
     if subfolder == "chembl27":
-        check_initialization_params(
-            attr=compound_name, accepted_list=["abl1", "renin", "thb"]
-        )
-
         df = df.drop(columns=["ChEMBL"], axis=1)
 
-    elif subfolder == "dude":
-        check_initialization_params(
-            attr=compound_name, accepted_list=["abl1", "renin", "thb"]
-        )
-
-    elif subfolder == "zinc15":
-        pass
+    if subfolder == "zinc15":
+        df["labels"] = 0
 
     if return_vectors is True:
         data_vectors_path = data_root_path / "vectors" / f"{compound_name}.csv"

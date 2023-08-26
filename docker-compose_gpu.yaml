@@ -10,8 +10,8 @@ services:
   thesis-work-gpu:
     container_name: thesis-work-gpu
     image: thesis-work-gpu:latest
-    privileged: true
-    shm_size: 64gb # To avoid `RuntimeError: DataLoader worker (pid 13) is killed by signal`. Should be always less than total RAM
+    # privileged: true
+    shm_size: 128gb # To avoid `RuntimeError: DataLoader worker (pid 13) is killed by signal`. Should be always less than total RAM
     build:
       context: .
       dockerfile: ./docker/Dockerfile_gpu

@@ -10,7 +10,7 @@ RUN apt-get update --yes --quiet && DEBIAN_FRONTEND=noninteractive apt-get insta
     software-properties-common \
     build-essential make apt-utils \
     wget curl vim git ca-certificates kmod \
-    htop nvtop \
+    ncdu htop nvtop \
  && rm -rf /var/lib/apt/lists/*
 
 # PYTHON 3.10
@@ -58,14 +58,19 @@ COPY ./poetry.lock ./pyproject.toml ./
 # RUN pip install poetry==1.5.1 && poetry install --no-root
 
 RUN pip install poetry==1.5.1
-RUN --mount=type=cache,target=$POETRY_CACHE_DIR poetry install --no-root || true
+RUN --mount=type=cache,target=$POETRY_CACHE_DIR poetry install --no-root
 
 COPY . .
 
-RUN --mount=type=cache,target=$POETRY_CACHE_DIR poetry install || true
+RUN --mount=type=cache,target=$POETRY_CACHE_DIR poetry install
 
-RUN addgroup --gid $PGID user
-RUN adduser --disabled-password --gecos '' --uid $PUID --gid $PGID user
+RUN addgroup --gid $PGID user && \
+    adduser --disabled-password --gecos '' --uid $PUID --gid $PGID user
 USER user
+
+# NOTE: To prevent creating wandb folder in /tmp because of permission issues
+# RUN mkdir wandb
+# RUN chown -R user:user /thesis-work/wandb
+
 
 ENTRYPOINT ["poetry", "run"]

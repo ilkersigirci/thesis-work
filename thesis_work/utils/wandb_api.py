@@ -145,7 +145,7 @@ def get_metric_from_project(
             logger.debug(f"Skipping because of empty run history, {run.name}.")
             continue
 
-        run_history["name"] = run.name
+        run_history["name"] = run.name.replace("\n", "").strip().upper().replace(" ", "")
 
         if filter_column_contains_substring is not None:
             run_history = run_history[
@@ -255,7 +255,7 @@ def plot_metric_from_project(  # noqa: PLR0913
     if save_path is not None:
         fig.savefig(save_path, dpi=200, bbox_inches="tight")
 
-        size = os.path.getsize(save_path)
-        logger.debug(f"The size of the saved figure is {size} bytes.")
+        size = os.path.getsize(save_path) / 1024
+        logger.debug(f"The size of the saved figure is {size} KB.")
 
     return fig

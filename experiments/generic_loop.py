@@ -96,16 +96,18 @@ def main():  # noqa: C901, PLR0912, PLR0915
     num_threads = None
     random_state = 42
     logged_plot_type = "static"
+    DATASET_LIMIT = 250_000
 
-    device = "cuda"
-    # device = "cpu"
+    # device = "cuda"
+    device = "cpu"
 
-    sample_size = None
+    # sample_size = None
     # sample_size = 300
     # sample_size = 2_000
     # sample_size = 21996
     # sample_size = 25_000
     # sample_size = 40_000
+    sample_size = 250_000
 
     ############################## DATA LOADING ##############################
 
@@ -132,14 +134,13 @@ def main():  # noqa: C901, PLR0912, PLR0915
     # subfolder = None
     # subfolder = "chembl27"
     # subfolder = "dude"
+    subfolder = "zinc15"
 
     # compound_name = None
     # compound_name = "abl1"
     # compound_name = "renin"
     # compound_name = "thb"
-
     compound_name = "zinc15-minor-targets"
-    subfolder = "zinc15"
 
     smiles_df = load_ataberk(
         subfolder=subfolder,
@@ -155,36 +156,37 @@ def main():  # noqa: C901, PLR0912, PLR0915
     # wandb_project_name = "6-protein-family-2-step"
 
     model_with_dims = {
-        # "DeepChem/ChemBERTa-77M-MTR": 384,
+        "DeepChem/ChemBERTa-77M-MTR": 384,
         "chemprop": 25,
-        # "ecfp": 2048,
+        "ecfp": 2048,
     }
-
-    # dimensionality_reduction_methods = ["PCA", "UMAP"]
-    dimensionality_reduction_methods = [None, "PCA", "UMAP"]
+    # dimensionality_reduction_methods = [None]
+    dimensionality_reduction_methods = ["PCA", "UMAP"]
+    # dimensionality_reduction_methods = [None, "PCA", "UMAP"]
     n_components_list = [16, 32]
 
     clustering_method_kwargs_mapping = {
-        "K-MEANS": {
-            "init_method": "k-means++",
-            "n_clusters": 3,
-            "n_init": 1,
-        },
-        "AGGLOMERATIVE": {
-            "n_clusters": 3,
-            "affinity": "euclidean",
-            "linkage": "single",
-        },
-        "HDBSCAN": {  # NOTE: Not working with ECFP at all !!
-            "min_cluster_size": 5,
-            "metric": "euclidean",
-            # "metric": "jaccard",  # NOTE: Doesn't work
-        },
-        # "BUTINA": {
-        #     # "distance_metric": "euclidean",
-        #     "distance_metric": "jaccard",
-        #     "threshold": 0.35,
+        # "K-MEANS": {
+        #     "init_method": "k-means++",
+        #     "n_clusters": 3,
+        #     "n_init": 1,
         # },
+        # "AGGLOMERATIVE": {
+        #     "n_clusters": 3,
+        #     "affinity": "euclidean",
+        #     "linkage": "single",
+        # },
+        # "HDBSCAN": {  # NOTE: Not working with ECFP at all !!
+        #     "min_cluster_size": 5,
+        #     "metric": "euclidean",
+        #     # "metric": "jaccard",  # NOTE: Doesn't work
+        #     # "prediction_data": False
+        # },
+        "BUTINA": {
+            # "distance_metric": "euclidean",
+            "distance_metric": "jaccard",
+            "threshold": 0.35,
+        },
     }
 
     if compound_name is not None:
@@ -213,7 +215,9 @@ def main():  # noqa: C901, PLR0912, PLR0915
 
     # min_cluster_sizes = None
     # min_cluster_sizes = list(range(5, 100, 5))
-    min_cluster_sizes = list(range(10, 1000, 20))
+
+    # NOTE: 700 is the max for zinc15-minor-targets to prevent memory error
+    min_cluster_sizes = list(range(10, 500, 10))
 
     input_clustering_param_dict = {
         "n_clusters": n_clusters,
@@ -231,6 +235,17 @@ def main():  # noqa: C901, PLR0912, PLR0915
         for model_name, model_dim in model_with_dims.items():
             for dimensionality_reduction_method in dimensionality_reduction_methods:
                 dimensionality_reduction_method_kwargs = None
+
+                if (
+                    clustering_method == "HDBSCAN"
+                    and model_name == "ecfp"
+                    and device == "cuda"
+                    and smiles_df.shape[0] > DATASET_LIMIT
+                ):
+                    logger.info(
+                        "Skipping since HDBSCAN + ECFP is not working large dataset on GPU"
+                    )
+                    continue
 
                 if (
                     clustering_method == "BUTINA"

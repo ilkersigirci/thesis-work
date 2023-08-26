@@ -1,9 +1,14 @@
 import logging
 import os
+from typing import Optional
 
+import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.express as px
+import seaborn as sns
 import wandb
+
+from thesis_work.utils.initialization import check_initialization_params
 
 # import seaborn as sns
 
@@ -105,26 +110,11 @@ def get_project_history(project_name: str):
 
 
 def get_metric_from_project(
-    project_name: str, metric: str, metric_x_index_name: str
+    project_name: str,
+    metric: str,
+    metric_x_index_name: str,
+    filter_column_contains_substring: Optional[str] = None,
 ) -> pd.DataFrame:
-    # runs_df = get_processed_project_summary(project_name=project_name)
-
-    # check_initialization_params(
-    #     attr=metric_x_index_name, accepted_list=runs_df["metric_x_index_name"].unique()
-    # )
-
-    # runs_df = runs_df[runs_df["metric_x_index_name"] == metric_x_index_name]
-
-    # runs_df["metric_scores"] = runs_df["summary"].apply(lambda x: x.get(metric, None))
-
-    # # Check if runs_df["metric_scores"] is all None value
-    # if runs_df["metric_scores"].isna().all():
-    #     raise ValueError(f"Metric {metric} is not found in the project.")
-
-    # return runs_df[["name", "metric_x_index_name", "metric_scores"]]
-
-    ###################################################################################
-
     WANDB_USER_NAME = os.environ.get("WANDB_USER_NAME", None)
 
     if WANDB_USER_NAME is None:
@@ -157,6 +147,19 @@ def get_metric_from_project(
 
         run_history["name"] = run.name
 
+        if filter_column_contains_substring is not None:
+            run_history = run_history[
+                run_history["name"].str.contains(
+                    filter_column_contains_substring, case=False
+                )
+            ]
+
+        if run_history.empty:
+            logger.debug(
+                f"Skipping because of empty run history filtered with {filter_column_contains_substring}, {run.name}."
+            )
+            continue
+
         run_history[metric] = run_history[metric].astype(float).round(3)
         run_history[metric_x_index_name] = run_history[metric_x_index_name].astype(int)
 
@@ -168,58 +171,91 @@ def get_metric_from_project(
     return pd.concat(run_history_list, ignore_index=True, sort=False)
 
 
-def plot_metric_from_project(
+def _process_figure_legend(ax, remove_string: str = ""):
+    handles, labels = ax.get_legend_handles_labels()
+    labels = [label.replace(remove_string, "") for label in labels]
+
+    # For ChemBERTa suffix
+    chemberta_suffix = "-77M-MTR"
+    labels = [label.replace(chemberta_suffix, "") for label in labels]
+    labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: t[0]))
+    ax.legend(handles, labels, loc="lower right")
+
+
+def plot_metric_from_project(  # noqa: PLR0913
     df: pd.DataFrame,
     # project_name: str,
     metric: str,
     metric_x_index_name: str,
+    filter_column_contains_substring: str = "",
     # hue: str = None,
     # palette: str = "tab10",
-    # save_path: str = None,
+    show_title: bool = False,
+    save_path: Optional[str] = None,
+    method: str = "matplotlib",
 ):
-    # df = get_metric_from_project(
-    #     project_name=project_name,
-    #     metric=metric,
-    #     metric_x_index_name=metric_x_index_name,
-    # )
-
-    # sns.set_style("whitegrid")
-    # sns.set_context("paper", font_scale=1.5)
-
-    # if hue is None:
-    #     ax = sns.lineplot(
-    #         x=metric_x_index_name,
-    #         y=metric,
-    #         data=df,
-    #         ci="sd",
-    #         err_style="band",
-    #         palette=palette,
-    #     )
-    # else:
-    #     ax = sns.lineplot(
-    #         x=metric_x_index_name,
-    #         y=metric,
-    #         hue=hue,
-    #         data=df,
-    #         ci="sd",
-    #         err_style="band",
-    #         palette=palette,
-    #     )
-
-    # if save_path is not None:
-    #     ax.figure.savefig(save_path, dpi=300, bbox_inches="tight")
-
-    # return ax
+    check_initialization_params(
+        attr=method, accepted_list=["matplotlib", "seaborn", "plotly"]
+    )
     # df.assign(base=df['name'].apply(lambda x: 16 if '16' in x else 32))
 
-    return px.line(
-        df,
-        x=metric_x_index_name,
-        y=metric,
-        color="name",
-        title=f"{metric} score",
-        markers=True,
-        width=1280,
-        height=720,
-        # facet_col="base",
-    )
+    # For ChemBERTa
+    df["name"] = df["name"].apply(lambda x: x.replace("-77M-MTR", ""))
+
+    if method == "plotly":
+        fig = px.line(
+            df,
+            x=metric_x_index_name,
+            y=metric,
+            color="name",
+            title=f"{metric} score",
+            markers=False,
+            width=1280,
+            height=720,
+            # facet_col="base",
+        )
+
+        if show_title is False:
+            fig.update_layout(title_text=None)
+
+        if save_path is not None:
+            fig.write_image(save_path)
+
+        return fig
+
+    fig, ax = plt.subplots(figsize=(12, 7))
+
+    if method == "matplotlib":
+        for name, group in df.groupby("name"):
+            ax.plot(group[metric_x_index_name], group[metric], label=name)
+
+    elif method == "seaborn":
+        sns.lineplot(
+            data=df,
+            x=metric_x_index_name,
+            y=metric,
+            hue="name",
+            ax=ax,
+            markers=False,
+            style="name",
+        )
+
+    ax.set_xlabel(metric_x_index_name)
+    ax.set_ylabel(metric)
+    ax.legend(loc="lower right")
+    ax.grid(False)
+
+    if show_title is True:
+        ax.set_title(f"{metric} score")
+
+    plt.close(fig)
+
+    _process_figure_legend(ax=ax, remove_string=filter_column_contains_substring)
+
+    if save_path is not None:
+        fig.savefig(save_path, dpi=200, bbox_inches="tight")
+
+        size = os.path.getsize(save_path)
+        logger.debug(f"The size of the saved figure is {size} bytes.")
+
+    return fig

@@ -13,6 +13,9 @@ from rdkit import Chem, RDLogger
 from rdkit.Chem import AllChem
 from rdkit.Chem.MolStandardize.rdMolStandardize import LargestFragmentChooser
 from rdkit.DataStructs.cDataStructs import ExplicitBitVect
+from sklearn.cluster import KMeans
+from sklearn.datasets import make_blobs
+from sklearn.metrics import silhouette_samples
 
 from thesis_work.utils.initialization import check_initialization_params
 
@@ -237,4 +240,85 @@ def plot_global_embeddings_with_clusters(  # noqa: PLR0913
     ax.figure.colorbar(sm, label="Global Cluster")
 
     plt.title(title)
+    plt.show()
+
+
+def plot_example_clusters_with_silhouette_samples():
+    """Shows side-by-side plot of original and clustered of a mock data"""
+
+    # Generate example data
+    X, y = make_blobs(n_samples=80, centers=4, n_features=2, random_state=7)
+
+    # Fit KMeans clustering model
+    kmeans = KMeans(n_clusters=4, random_state=42)
+    kmeans.fit(X)
+
+    # Calculate silhouette score
+    # silhouette_avg = silhouette_score(X, kmeans.labels_)
+
+    # Create a figure with three subplots
+    fig, axs = plt.subplots(nrows=1, ncols=3, figsize=(18, 5))
+
+    # Plot the original data on the left subplot
+    axs[0].scatter(X[:, 0], X[:, 1])
+    axs[0].set_title("Original Data")
+    axs[0].spines["right"].set_visible(False)
+    axs[0].spines["top"].set_visible(False)
+
+    # Plot the clustered data on the middle subplot
+    axs[1].scatter(X[:, 0], X[:, 1], c=kmeans.labels_)
+    axs[1].set_title("Clustered Data")
+    axs[1].spines["right"].set_visible(False)
+    axs[1].spines["top"].set_visible(False)
+
+    # Plot a circle around each cluster center
+    for i in range(kmeans.n_clusters):
+        circle = plt.Circle(
+            (kmeans.cluster_centers_[i, 0], kmeans.cluster_centers_[i, 1]),
+            2.6,
+            color="red",  # changed color to red
+            fill=False,
+            linestyle="--",
+            linewidth=2.5,
+        )
+        axs[1].add_artist(circle)
+
+    # Plot the silhouette graph on the right subplot
+    sample_silhouette_values = silhouette_samples(X, kmeans.labels_)
+    y_lower = 10
+    for i in range(kmeans.n_clusters):
+        ith_cluster_silhouette_values = sample_silhouette_values[kmeans.labels_ == i]
+        ith_cluster_silhouette_values.sort()
+        size_cluster_i = ith_cluster_silhouette_values.shape[0]
+        y_upper = y_lower + size_cluster_i
+        color = plt.cm.get_cmap("Spectral")(float(i) / kmeans.n_clusters)
+        axs[2].fill_betweenx(
+            np.arange(y_lower, y_upper),
+            0,
+            ith_cluster_silhouette_values,
+            facecolor=color,
+            edgecolor=color,
+            alpha=0.7,
+        )
+        axs[2].text(-0.05, y_lower + 0.5 * size_cluster_i, str(i))
+        y_lower = y_upper + 10
+
+    axs[2].set_title("Silhouette plot")
+    # axs[2].set_xlabel("Silhouette coefficient values")
+    # axs[2].set_ylabel("Cluster label")
+
+    # Set tick labels to empty
+    axs[0].xaxis.set_ticklabels([])
+    axs[0].yaxis.set_ticklabels([])
+    axs[1].xaxis.set_ticklabels([])
+    axs[1].yaxis.set_ticklabels([])
+    axs[2].xaxis.set_ticklabels([])
+    axs[2].yaxis.set_ticklabels([])
+
+    # Add silhouette score to the title of the silhouette plot
+    axs[2].set_title("Silhouette plot")
+
+    plt.savefig("clustered_data.png", dpi=300, bbox_inches="tight")
+
+    # Show the plot
     plt.show()

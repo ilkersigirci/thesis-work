@@ -98,16 +98,17 @@ def main():  # noqa: C901, PLR0912, PLR0915
     logged_plot_type = "static"
     DATASET_LIMIT = 250_000
 
-    # device = "cuda"
-    device = "cpu"
+    device = "cuda"
+    # device = "cpu"
 
-    # sample_size = None
+    sample_size = None
     # sample_size = 300
     # sample_size = 2_000
     # sample_size = 21996
     # sample_size = 25_000
     # sample_size = 40_000
-    sample_size = 250_000
+    # sample_size = 100_000
+    # sample_size = 250_000
 
     ############################## DATA LOADING ##############################
 
@@ -161,32 +162,32 @@ def main():  # noqa: C901, PLR0912, PLR0915
         "ecfp": 2048,
     }
     # dimensionality_reduction_methods = [None]
-    dimensionality_reduction_methods = ["PCA", "UMAP"]
-    # dimensionality_reduction_methods = [None, "PCA", "UMAP"]
+    # dimensionality_reduction_methods = ["PCA", "UMAP"]
+    dimensionality_reduction_methods = ["PCA", "UMAP", None]
     n_components_list = [16, 32]
 
     clustering_method_kwargs_mapping = {
         # "K-MEANS": {
         #     "init_method": "k-means++",
-        #     "n_clusters": 3,
+        #     "n_clusters": 1_000,
         #     "n_init": 1,
         # },
-        # "AGGLOMERATIVE": {
-        #     "n_clusters": 3,
-        #     "affinity": "euclidean",
-        #     "linkage": "single",
-        # },
+        "AGGLOMERATIVE": {
+            "n_clusters": 1_000,
+            "affinity": "euclidean",
+            "linkage": "single",
+        },
         # "HDBSCAN": {  # NOTE: Not working with ECFP at all !!
         #     "min_cluster_size": 5,
         #     "metric": "euclidean",
         #     # "metric": "jaccard",  # NOTE: Doesn't work
         #     # "prediction_data": False
         # },
-        "BUTINA": {
-            # "distance_metric": "euclidean",
-            "distance_metric": "jaccard",
-            "threshold": 0.35,
-        },
+        # "BUTINA": {
+        #     # "distance_metric": "euclidean",
+        #     "distance_metric": "jaccard",
+        #     "threshold": 0.35,
+        # },
     }
 
     if compound_name is not None:
@@ -203,15 +204,16 @@ def main():  # noqa: C901, PLR0912, PLR0915
     # n_clusters = None
     # n_clusters = list(range(2, 50, 2))
     # n_clusters = list(range(5, 100, 5))
-    n_clusters = list(range(10, 1000, 20))
+    n_clusters = list(range(10, 1_000, 10))
+    # n_clusters = list(range(10, 1000, 20))
 
     # thresholds = None
     # thresholds = [0.5, 0.8]
     thresholds = [0.2, 0.35, 0.5, 0.8]
 
     # min_samples = None
-    # min_samples = list(range(5, 100, 5))
-    min_samples = list(range(10, 1000, 20))
+    min_samples = list(range(5, 100, 5))
+    # min_samples = list(range(10, 1000, 20))
 
     # min_cluster_sizes = None
     # min_cluster_sizes = list(range(5, 100, 5))

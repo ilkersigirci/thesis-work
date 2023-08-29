@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Optional
+from typing import List, Optional
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -81,7 +81,13 @@ def get_processed_project_summary(project_name: str) -> pd.DataFrame:
     return runs_df
 
 
-def get_project_history(project_name: str):
+def get_project_history(
+    project_name: str,
+    filtered_columns: Optional[List[str]] = None,
+    run_name_filter_substring: Optional[str] = None,
+    method: str = "history",
+    sample_size: int = 1000,
+):
     """Returns all logged values
 
     NOTE: The default history method samples the metrics to a fixed number of samples
@@ -94,17 +100,45 @@ def get_project_history(project_name: str):
     if WANDB_USER_NAME is None:
         raise ValueError("WANDB_USER_NAME environment variable is not set.")
 
+    check_initialization_params(attr=method, accepted_list=["scan_history", "history"])
+
     api = wandb.Api()
     runs = api.runs(WANDB_USER_NAME + "/" + project_name)
     run_history_list = []
 
     for run in runs:
-        run_history = run.history()
-        run_history = run_history.drop[
-            ["_timestamp", "_step", "Original Labels", "Cluster Calculated Labels"]
-        ]
+        run_name = run.name.replace("\n", "").strip().upper().replace(" ", "")
 
+        if (
+            run_name_filter_substring is not None
+            and run_name_filter_substring not in run_name
+        ):
+            logger.debug(
+                f"Skipping because of the run name filter substring, {run_name}."
+            )
+
+            continue
+
+        if method == "scan_history":
+            run_history = pd.Dataframe(run.scan_history(keys=filtered_columns))
+
+        elif method == "history":
+            run_history = run.history(
+                samples=sample_size,
+                keys=filtered_columns,
+                x_axis=filtered_columns[0],
+                pandas=True,
+            )
+
+        if run_history.empty:
+            logger.debug(f"Skipping because of empty run history, {run.name}.")
+            continue
+
+        run_history["name"] = run_name
         run_history_list.append(run_history)
+
+    if run_history_list == []:
+        raise ValueError("No run history is found.")
 
     return pd.concat(run_history_list, ignore_index=True, sort=False)
 
@@ -113,62 +147,26 @@ def get_metric_from_project(
     project_name: str,
     metric: str,
     metric_x_index_name: str,
-    filter_column_contains_substring: Optional[str] = None,
+    run_name_filter_substring: Optional[str] = None,
+    history_method: str = "history",
 ) -> pd.DataFrame:
-    WANDB_USER_NAME = os.environ.get("WANDB_USER_NAME", None)
+    project_history = get_project_history(
+        project_name=project_name,
+        filtered_columns=[metric_x_index_name, metric],
+        run_name_filter_substring=run_name_filter_substring,
+        method=history_method,
+        sample_size=1000,
+    )
 
-    if WANDB_USER_NAME is None:
-        raise ValueError("WANDB_USER_NAME environment variable is not set.")
+    project_history[metric] = project_history[metric].astype(float).round(3)
+    project_history[metric_x_index_name] = project_history[metric_x_index_name].astype(
+        int
+    )
 
-    api = wandb.Api()
-    runs = api.runs(WANDB_USER_NAME + "/" + project_name)
-
-    run_history_list = []
-    for run in runs:
-        run_history = run.history()
-        run_history_columns = run_history.columns
-
-        if (
-            metric not in run_history_columns
-            or metric_x_index_name not in run_history_columns
-        ):
-            logger.debug(
-                f"Skipping since necessary columns are not found in the run history, {run.name}."
-            )
-            continue
-
-        run_history = (
-            run_history[[metric_x_index_name, metric]].dropna().reset_index(drop=True)
-        )
-
-        if run_history.empty:
-            logger.debug(f"Skipping because of empty run history, {run.name}.")
-            continue
-
-        run_history["name"] = run.name.replace("\n", "").strip().upper().replace(" ", "")
-
-        if filter_column_contains_substring is not None:
-            run_history = run_history[
-                run_history["name"].str.contains(
-                    filter_column_contains_substring, case=False
-                )
-            ]
-
-        if run_history.empty:
-            logger.debug(
-                f"Skipping because of empty run history filtered with {filter_column_contains_substring}, {run.name}."
-            )
-            continue
-
-        run_history[metric] = run_history[metric].astype(float).round(3)
-        run_history[metric_x_index_name] = run_history[metric_x_index_name].astype(int)
-
-        run_history_list.append(run_history)
-
-    if not run_history_list:
-        raise ValueError(f"Metric {metric} is not found in the project.")
-
-    return pd.concat(run_history_list, ignore_index=True, sort=False)
+    return project_history.sort_values(
+        by=metric_x_index_name,
+        ascending=True,
+    )
 
 
 def _process_figure_legend(ax, remove_string: str = ""):
@@ -187,7 +185,7 @@ def plot_metric_from_project(  # noqa: PLR0913
     # project_name: str,
     metric: str,
     metric_x_index_name: str,
-    filter_column_contains_substring: str = "",
+    run_name_filter_substring: str = "",
     # hue: str = None,
     # palette: str = "tab10",
     show_title: bool = False,
@@ -250,7 +248,7 @@ def plot_metric_from_project(  # noqa: PLR0913
 
     plt.close(fig)
 
-    _process_figure_legend(ax=ax, remove_string=filter_column_contains_substring)
+    _process_figure_legend(ax=ax, remove_string=run_name_filter_substring)
 
     if save_path is not None:
         fig.savefig(save_path, dpi=200, bbox_inches="tight")
@@ -258,4 +256,4 @@ def plot_metric_from_project(  # noqa: PLR0913
         size = os.path.getsize(save_path) / 1024
         logger.debug(f"The size of the saved figure is {size} KB.")
 
-    return fig
+    return fig, ax

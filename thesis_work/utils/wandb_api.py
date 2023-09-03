@@ -166,7 +166,7 @@ def get_metric_from_project(
     return project_history.sort_values(
         by=metric_x_index_name,
         ascending=True,
-    )
+    ).reset_index(drop=True)
 
 
 def _process_figure_legend(ax, remove_string: str = ""):
@@ -249,6 +249,9 @@ def plot_metric_from_project(  # noqa: PLR0913
     plt.close(fig)
 
     _process_figure_legend(ax=ax, remove_string=run_name_filter_substring)
+
+    # For 6 protein families
+    # ax.axvline(x=6, color="black", linestyle="--", linewidth=2)
 
     if save_path is not None:
         fig.savefig(save_path, dpi=200, bbox_inches="tight")

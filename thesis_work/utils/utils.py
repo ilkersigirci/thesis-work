@@ -322,3 +322,41 @@ def plot_example_clusters_with_silhouette_samples():
 
     # Show the plot
     plt.show()
+
+
+def plot_choosing_dim_reduction_with_mean(df: pd.DataFrame) -> None:
+    fig, ax = plt.subplots(1, 1, figsize=(12, 8))
+
+    base_result = df[df["name"] == "K-MEANS_CHEMBERTA-77M-MTR"]
+
+    ax.plot(
+        base_result["n_clusters"],
+        base_result["silhouette"],
+        color="red",
+        label="Baseline",
+    )
+
+    colors = ["black", "blue"]
+    for i, method in enumerate(["UMAP", "PCA"]):
+        processed_result = df[
+            (df["name"].str.contains(f"{method}_16"))
+            | (df["name"].str.contains(f"{method}_32"))
+        ].loc[~df["name"].str.contains("AGGLOMERATIVE")]
+
+        for n in processed_result.name.unique():
+            ax.scatter(
+                processed_result.loc[processed_result["name"] == n, "n_clusters"],
+                processed_result.loc[processed_result["name"] == n, "silhouette"],
+                label=n,
+                alpha=0.7,
+            )
+
+        ax.plot(
+            processed_result.groupby(["n_clusters"]).mean().reset_index()["n_clusters"],
+            processed_result.groupby(["n_clusters"]).mean().reset_index()["silhouette"],
+            color=colors[i],
+            label="K-Means Average",
+        )
+
+    fig.tight_layout(w_pad=2)
+    fig.legend(loc="lower right")

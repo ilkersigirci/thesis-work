@@ -10,7 +10,7 @@ from thesis_work.utils.utils import check_device
 logger = logging.getLogger(__name__)
 
 
-def apply_dbscan(  # noqa: PLR0913
+def apply_dbscan(
     data: np.array,
     eps: float = 0.5,
     min_samples: int = 5,
@@ -50,7 +50,7 @@ def apply_dbscan(  # noqa: PLR0913
     return clustering_model.labels_, None
 
 
-def apply_hdbscan(  # noqa: PLR0913
+def apply_hdbscan(
     data: np.array,
     min_cluster_size: int = 5,
     cluster_selection_epsilon: float = 0.0,
@@ -69,10 +69,7 @@ def apply_hdbscan(  # noqa: PLR0913
             raise ValueError(
                 f"Metric {metric} not supported by cuML HDBSCAN. See: {github_issue_link}"
             )
-        else:
-            raise ValueError(
-                "sklearn HDBSCAN doesn't work with jaccard metric somehow."
-            )
+        raise ValueError("sklearn HDBSCAN doesn't work with jaccard metric somehow.")
 
     # CPU only params: algorithm: str = "auto"
     clustering_model = HDBSCAN(

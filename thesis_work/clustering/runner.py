@@ -103,7 +103,7 @@ MODELS_WITH_DIMS = {
 
 
 class ClusterRunner:
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         wandb_project_name: str,
         wandb_run_name: Optional[str] = None,
@@ -234,7 +234,7 @@ class ClusterRunner:
                 self._disable_dim_reduction(message=message)
 
                 return
-            elif n_components > model_feature_dim:
+            if n_components > model_feature_dim:
                 message = (
                     f"Dimensionality reduction dimension ({n_components}) "
                     f"cannot be greater than model's feature dimension ({model_feature_dim}). "
@@ -428,10 +428,7 @@ class ClusterRunner:
         if "labels" not in self.smiles_df.columns:
             return False
 
-        if len(self.smiles_df["labels"].unique()) == 1:
-            return False
-
-        return True
+        return len(self.smiles_df["labels"].unique()) != 1
 
     def evaluate_clusters(
         self, cluster_labels: np.array, inertia: Optional[float] = None
@@ -441,7 +438,7 @@ class ClusterRunner:
         """
 
         if is_valid_cluster_labels(labels=cluster_labels) is False:
-            return None
+            return
 
         for clustering_evaluation_method in CLUSTERING_EVALUATION_METRICS:
             if not clustering_evaluation_method.need_true_labels:
@@ -571,9 +568,9 @@ class ClusterRunner:
             )
 
         for experimented_param_input_value in experimented_param_input_values:
-            self.clustering_method_kwargs[
-                experimented_param_name
-            ] = experimented_param_input_value
+            self.clustering_method_kwargs[experimented_param_name] = (
+                experimented_param_input_value
+            )
 
             logger.info(
                 f"Running clustering for {experimented_param_name}: {experimented_param_input_value}"

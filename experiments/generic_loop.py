@@ -69,22 +69,21 @@ cupy_backends.cuda.api.driver.CUDADriverError: CUDA_ERROR_INVALID_VALUE: invalid
 """
 
 import logging
-import os
+import os  # noqa: F401
 import time
 
 import wandb
-
 from thesis_work.clustering.runner import ClusterRunner
 from thesis_work.utils.data import (
-    load_ataberk,
-    load_protein_family_multiple_interacted,  # noqa: F401
+    load_ataberk,  # noqa: F401
+    load_protein_family_multiple_interacted,
     load_related_work,  # noqa: F401
 )
 
 logger = logging.getLogger(__name__)
 
 
-def main():  # noqa: C901, PLR0912, PLR0915
+def main():  # noqa: C901
     # NOTE: To disable all wandb logging
     # os.environ["WANDB_MODE"] = "disabled"
 
@@ -101,9 +100,10 @@ def main():  # noqa: C901, PLR0912, PLR0915
     device = "cuda"
     # device = "cpu"
 
-    sample_size = None
+    # sample_size = None
     # sample_size = 300
     # sample_size = 2_000
+    sample_size = 6_000
     # sample_size = 21996
     # sample_size = 25_000
     # sample_size = 40_000
@@ -112,49 +112,50 @@ def main():  # noqa: C901, PLR0912, PLR0915
 
     ############################## DATA LOADING ##############################
 
-    # protein_types = [
-    #     "gpcr",
-    #     "ionchannel",
-    #     "kinase",
-    #     "nuclearreceptor",
-    #     "protease",
-    #     "transporter",
-    # ]
-    # protein_types.sort()
-    protein_types = None
+    protein_types = [
+        "gpcr",
+        "ionchannel",
+        "kinase",
+        "nuclearreceptor",
+        "protease",
+        "transporter",
+    ]
+    protein_types.sort()
+    # protein_types = None
 
-    # smiles_df = load_protein_family_multiple_interacted(
-    #     protein_types=protein_types,
-    #     sample_size=sample_size,
-    #     random_state=random_state,
-    #     convert_labels=False,
-    # )
+    smiles_df = load_protein_family_multiple_interacted(
+        protein_types=protein_types,
+        sample_size=sample_size,
+        random_state=random_state,
+        convert_labels=False,
+    )
 
     # smiles_df = load_related_work(sample_size=sample_size, random_state=random_state)
 
-    # subfolder = None
+    subfolder = None
     # subfolder = "chembl27"
     # subfolder = "dude"
-    subfolder = "zinc15"
+    # subfolder = "zinc15"
 
-    # compound_name = None
+    compound_name = None
     # compound_name = "abl1"
     # compound_name = "renin"
     # compound_name = "thb"
-    compound_name = "zinc15-minor-targets"
+    # compound_name = "zinc15-minor-targets"
 
-    smiles_df = load_ataberk(
-        subfolder=subfolder,
-        compound_name=compound_name,
-        return_vectors=False,
-        sample_size=sample_size,
-        random_state=random_state,
-    )
+    # smiles_df = load_ataberk(
+    #     subfolder=subfolder,
+    #     compound_name=compound_name,
+    #     return_vectors=False,
+    #     sample_size=sample_size,
+    #     random_state=random_state,
+    # )
 
     ############################## OTHER PARAMS ##############################
 
-    wandb_project_name = "ataberk"
+    # wandb_project_name = "ataberk"
     # wandb_project_name = "6-protein-family-2-step"
+    wandb_project_name = "Dim-Reduction-Selection"
 
     model_with_dims = {
         "DeepChem/ChemBERTa-77M-MTR": 384,
@@ -166,17 +167,20 @@ def main():  # noqa: C901, PLR0912, PLR0915
     dimensionality_reduction_methods = ["PCA", "UMAP", None]
     n_components_list = [16, 32]
 
+    # dimensionality_reduction_methods = ["UMAP"]
+    # n_components_list = [16]
+
     clustering_method_kwargs_mapping = {
-        # "K-MEANS": {
-        #     "init_method": "k-means++",
-        #     "n_clusters": 1_000,
-        #     "n_init": 1,
-        # },
-        "AGGLOMERATIVE": {
-            "n_clusters": 1_000,
-            "affinity": "euclidean",
-            "linkage": "single",
+        "K-MEANS": {
+            "init_method": "k-means++",
+            "n_clusters": 6,
+            "n_init": 1,
         },
+        # "AGGLOMERATIVE": {
+        #     "n_clusters": 1_000,
+        #     "affinity": "euclidean",
+        #     "linkage": "single",
+        # },
         # "HDBSCAN": {  # NOTE: Not working with ECFP at all !!
         #     "min_cluster_size": 5,
         #     "metric": "euclidean",
@@ -184,8 +188,8 @@ def main():  # noqa: C901, PLR0912, PLR0915
         #     # "prediction_data": False
         # },
         # "BUTINA": {
-        #     # "distance_metric": "euclidean",
-        #     "distance_metric": "jaccard",
+        #     "distance_metric": "euclidean",
+        #     # "distance_metric": "jaccard",
         #     "threshold": 0.35,
         # },
     }
@@ -202,9 +206,9 @@ def main():  # noqa: C901, PLR0912, PLR0915
 
     ########################## INNER MULTIPLE RUN PARAMS #########################
     # n_clusters = None
-    # n_clusters = list(range(2, 50, 2))
+    n_clusters = list(range(2, 50, 2))
     # n_clusters = list(range(5, 100, 5))
-    n_clusters = list(range(10, 1_000, 10))
+    # n_clusters = list(range(10, 1_000, 10))
     # n_clusters = list(range(10, 1000, 20))
 
     # thresholds = None
@@ -221,7 +225,7 @@ def main():  # noqa: C901, PLR0912, PLR0915
     # NOTE: 700 is the max for zinc15-minor-targets to prevent memory error
     min_cluster_sizes = list(range(10, 500, 10))
 
-    input_clustering_param_dict = {
+    input_clustering_param_dict = {  # noqa: F841
         "n_clusters": n_clusters,
         "threshold": thresholds,
         "min_samples": min_samples,
@@ -249,6 +253,7 @@ def main():  # noqa: C901, PLR0912, PLR0915
                     )
                     continue
 
+                # TODO: Find out why !!!
                 if (
                     clustering_method == "BUTINA"
                     and model_name == "ecfp"
@@ -315,11 +320,12 @@ def main():  # noqa: C901, PLR0912, PLR0915
 
                     start_time = time.time()
 
-                    # cluster_runner.run_clustering()
+                    cluster_runner.run_clustering()
 
-                    cluster_runner.run_multiple_clustering(
-                        input_clustering_param_dict=input_clustering_param_dict
-                    )
+                    # cluster_runner.run_multiple_clustering(
+                    #     input_clustering_param_dict=input_clustering_param_dict
+                    # )
+
                     if wandb.run is not None:
                         wandb.finish()
 

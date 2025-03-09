@@ -48,7 +48,7 @@ def test_cuda(context: OpExecutionContext) -> None:
 
 @asset
 def test_print(context: OpExecutionContext) -> None:
-    print("Hello world")  # noqa: T201
+    print("Hello world")
 
 
 @asset
@@ -79,5 +79,5 @@ if __name__ == "__main__":
         resources={"wandb_resource": WandbResource(apikey=EnvVar("WANDB_API_KEY"))},
     )
 
-    print(result.output_for_node("pythonic_asset"))  # noqa: T201
-    print(result.output_for_node("pythonic_asset_with_resource"))  # noqa: T201
+    print(result.output_for_node("pythonic_asset"))
+    print(result.output_for_node("pythonic_asset_with_resource"))

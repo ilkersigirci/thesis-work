@@ -4,7 +4,6 @@ from typing import List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
-
 from thesis_work.cv.split import create_folds
 from thesis_work.utils.initialization import check_initialization_params
 from thesis_work.utils.molnet_dataloader import load_molnet_dataset
@@ -56,9 +55,7 @@ def _sample_data(
         ).reset_index(drop=True)
         dfs.append(df_label)
 
-    df = pd.concat(dfs, axis=0, ignore_index=True)
-
-    return df
+    return pd.concat(dfs, axis=0, ignore_index=True)
 
 
 def _merge_with_vectors(df: pd.DataFrame, vectors: pd.DataFrame):
@@ -87,30 +84,30 @@ def load_ataberk(
     data_root_path = DATA_PATH / "ataberk" / subfolder
     data_smiles_path = data_root_path / "smiles" / f"{compound_name}.csv"
 
-    df = pd.read_csv(data_smiles_path)
+    loaded_data = pd.read_csv(data_smiles_path)
 
     if subfolder == "chembl27":
-        df = df.drop(columns=["ChEMBL"], axis=1)
+        loaded_data = loaded_data.drop(columns=["ChEMBL"], axis=1)
 
     if subfolder == "zinc15":
-        df["labels"] = 0
+        loaded_data["labels"] = 0
 
     if return_vectors is True:
         data_vectors_path = data_root_path / "vectors" / f"{compound_name}.csv"
         vectors_df = pd.read_csv(data_vectors_path)
 
-        df = _merge_with_vectors(df=df, vectors=vectors_df)
+        loaded_data = _merge_with_vectors(df=loaded_data, vectors=vectors_df)
 
-    return _sample_data(df, sample_size=sample_size, random_state=random_state)
+    return _sample_data(loaded_data, sample_size=sample_size, random_state=random_state)
 
 
 def load_chembl_30(sample_size: Optional[int] = None, random_state: int = 42):
     # TODO: Change column names
 
     data_path = DATA_PATH / "chembl_30" / "smiles.tar.xz"
-    df = pd.read_csv(data_path, compression="xz", sep="\t")
+    loaded_data = pd.read_csv(data_path, compression="xz", sep="\t")
 
-    return _sample_data(df, sample_size=sample_size, random_state=random_state)
+    return _sample_data(loaded_data, sample_size=sample_size, random_state=random_state)
 
 
 def load_moleculenet(task: str = "bace", sample_size: Optional[int] = None):
@@ -122,9 +119,9 @@ def load_moleculenet(task: str = "bace", sample_size: Optional[int] = None):
     )
 
     data_path = DATA_PATH / "moleculenet" / f"{task}.csv"
-    df = pd.read_csv(data_path)
+    loaded_data = pd.read_csv(data_path)
 
-    return _sample_data(df, sample_size=sample_size)
+    return _sample_data(loaded_data, sample_size=sample_size)
 
 
 def load_protein_family(
@@ -135,13 +132,13 @@ def load_protein_family(
 ) -> pd.DataFrame:
     """ "Loads data"""
     data_path = DATA_PATH / "protein_family" / f"{protein_type}.csv"
-    df = pd.read_csv(data_path)
-    df.columns = ["text", "labels"]
+    loaded_data = pd.read_csv(data_path)
+    loaded_data.columns = ["text", "labels"]
 
     if interacted_only is True:
-        df = df[df["labels"] == 1]
+        loaded_data = loaded_data[loaded_data["labels"] == 1]
 
-    return _sample_data(df, sample_size=sample_size, random_state=random_state)
+    return _sample_data(loaded_data, sample_size=sample_size, random_state=random_state)
 
 
 def load_protein_family_multiple_interacted(
@@ -221,25 +218,25 @@ def load_protein_family_splits(
         )
 
     else:
-        df = load_protein_family(protein_type=protein_type)
+        loaded_data = load_protein_family(protein_type=protein_type)
 
         if fixed_cv is True:
-            len_data = len(df)
+            len_data = len(loaded_data)
             fold_list = create_folds(length=len_data)
             train_indices = [item for sublist in fold_list[:5] for item in sublist]
             test_indices = fold_list[5]
 
-            train_df = df.iloc[train_indices]
+            train_df = loaded_data.iloc[train_indices]
             valid_df = None
-            test_df = df.iloc[test_indices]
+            test_df = loaded_data.iloc[test_indices]
 
         else:
-            df = df.sample(frac=1, random_state=42)
+            loaded_data = loaded_data.sample(frac=1, random_state=42)
 
             train_df, valid_df, test_df = np.split(
                 # df.sample(frac=1), [int(0.6 * len(df)), int(0.8 * len(df))]
-                df.sample(frac=1),
-                [int(0.8 * len(df)), int(0.9 * len(df))],
+                loaded_data.sample(frac=1),
+                [int(0.8 * len(loaded_data)), int(0.9 * len(loaded_data))],
             )
 
     return train_df, valid_df, test_df
@@ -251,18 +248,18 @@ def load_related_work(
 ):
     """Loads data from related work"""
     data_path = DATA_PATH / "related_work" / "unbiased" / "compound_annotation.csv"
-    df = pd.read_csv(data_path, usecols=["SMILES"])
-    df = df.rename(columns={"SMILES": "text"})
+    loaded_data = pd.read_csv(data_path, usecols=["SMILES"])
+    loaded_data = loaded_data.rename(columns={"SMILES": "text"})
 
     # FIXME: Df has no labels. This is a temporary fix.
-    df["labels"] = 0
+    loaded_data["labels"] = 0
 
-    df = df[df["text"].apply(is_valid_smiles)]
+    loaded_data = loaded_data[loaded_data["text"].apply(is_valid_smiles)]
 
     # Reset index
-    df = df.reset_index(drop=True)
+    loaded_data = loaded_data.reset_index(drop=True)
 
-    return _sample_data(df, sample_size=sample_size, random_state=random_state)
+    return _sample_data(loaded_data, sample_size=sample_size, random_state=random_state)
 
 
 def save_data(df: pd.DataFrame, name: str, subfolder: str = "result_data"):

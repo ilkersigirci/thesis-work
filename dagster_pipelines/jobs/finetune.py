@@ -22,6 +22,7 @@ ops:
       fixed_cv: true
 
 """
+
 import pandas as pd
 from dagster import EnvVar, RunConfig, job
 from dotenv import load_dotenv

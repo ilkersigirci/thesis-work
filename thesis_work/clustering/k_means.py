@@ -10,7 +10,7 @@ from thesis_work.utils.utils import check_device
 logger = logging.getLogger(__name__)
 
 
-def apply_k_means(  # noqa: PLR0913
+def apply_k_means(
     data: np.array,
     init_method: str = "k-means++",
     n_clusters: int = 2,

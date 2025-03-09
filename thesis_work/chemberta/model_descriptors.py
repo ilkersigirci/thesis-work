@@ -61,8 +61,8 @@ def get_model_descriptor(
     # NOTE: Same with output[0]
     last_layer = output.last_hidden_state
 
-    # return torch.mean(sequence_out[0], dim=0).tolist()
-    return torch.mean(last_layer[0], dim=0).detach().numpy()
+    # return torch.mean(last_layer[0], dim=1).cpu().detach().numpy()
+    return torch.mean(last_layer[0], dim=0).cpu().detach().numpy()
 
 
 def get_model_descriptors(
@@ -103,11 +103,12 @@ def get_model_descriptors(
                 model=model, tokenizer=tokenizer, smiles_str=x
             )
         )
-    elif method == "simpletransformers":
+    if method == "simpletransformers":
         model = RepresentationModel(
             model_type="roberta", model_name=model_name, use_cuda=use_cuda
         )
         return model.encode_sentences(smiles_series, combine_strategy=combine_strategy)
+    return None
 
 
 # Mean Pooling - Take attention mask into account for correct averaging

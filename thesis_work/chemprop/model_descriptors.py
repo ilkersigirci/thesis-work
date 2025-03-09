@@ -30,9 +30,7 @@ def load_model(path: str, device: str = "cuda") -> torch.nn.Module:
     """Loads a model checkpoint."""
     device = torch.device(device)
 
-    model = load_checkpoint(path=path, device=device)
-
-    return model
+    return load_checkpoint(path=path, device=device)
 
 
 def get_model_descriptors(smiles_series: pd.Series, device: str = "cuda") -> np.array:
@@ -66,12 +64,10 @@ def get_model_descriptors(smiles_series: pd.Series, device: str = "cuda") -> np.
         disable_progress_bar=False,
     )
 
-    descriptors = np.array(descriptors)
-
-    return descriptors
+    return np.array(descriptors)
 
 
 if __name__ == "__main__":
     smiles_series = pd.Series(["CCO", "CCN", "CCC"])
     descriptors = get_model_descriptors(smiles_series=smiles_series)
-    print(descriptors)  # noqa: T201
+    print(descriptors)

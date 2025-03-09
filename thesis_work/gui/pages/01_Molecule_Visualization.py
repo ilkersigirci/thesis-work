@@ -1,4 +1,5 @@
 """Molecule visualization with RDKit"""
+
 import py3Dmol
 import streamlit as st
 
@@ -33,9 +34,7 @@ def makeblock(smi: str):
     mol = Chem.MolFromSmiles(smi)
     mol = Chem.AddHs(mol)
     AllChem.EmbedMolecule(mol)
-    mblock = Chem.MolToMolBlock(mol)
-
-    return mblock
+    return Chem.MolToMolBlock(mol)
 
 
 def render_mol(xyz, height: int = 600, width: int = 600):

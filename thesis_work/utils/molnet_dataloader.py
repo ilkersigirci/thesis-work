@@ -4,6 +4,7 @@
 
 Automatically generates scaffold splits on any MoleculeNet dataset.
 """
+
 import os
 from typing import List
 
@@ -188,7 +189,7 @@ def make_dataframe(
     if len(tasks) == 1:
         mapper = {"y": tasks[0]}
     else:
-        mapper = {f"y{y_i+1}": task for y_i, task in enumerate(tasks_wanted)}
+        mapper = {f"y{y_i + 1}": task for y_i, task in enumerate(tasks_wanted)}
     df.rename(mapper, axis="columns", inplace=True)
 
     # Canonicalize SMILES

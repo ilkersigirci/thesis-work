@@ -10,7 +10,6 @@ from dagster import (
     multi_asset,
 )
 from pydantic import Field
-
 from thesis_work.utils.data import load_protein_family_splits
 
 

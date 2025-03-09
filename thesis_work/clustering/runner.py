@@ -1,7 +1,10 @@
 import logging
+from copy import deepcopy
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Union
 
+import cupy
 import numpy as np
 import pandas as pd
 import wandb
@@ -14,6 +17,7 @@ from thesis_work.chemberta.model_descriptors import (
 from thesis_work.chemprop.model_descriptors import (
     get_model_descriptors as get_model_descriptors_chemprop,
 )
+from thesis_work.clustering.agglomerative import apply_agglomerative
 from thesis_work.clustering.butina import apply_butina, calculate_butina_distance_matrix
 from thesis_work.clustering.dbscan import apply_hdbscan  # apply_dbscan
 from thesis_work.clustering.dimensionality_reduction import (
@@ -21,7 +25,10 @@ from thesis_work.clustering.dimensionality_reduction import (
     apply_umap,
     plot_umap,
 )
-from thesis_work.clustering.evaluation import CLUSTERING_EVALUATION_METRICS
+from thesis_work.clustering.evaluation import (
+    CLUSTERING_EVALUATION_METRICS,
+    is_valid_cluster_labels,
+)
 from thesis_work.clustering.k_means import apply_k_means
 from thesis_work.utils.initialization import (
     check_function_init_params,
@@ -41,17 +48,62 @@ dimensionality_reduction_mapping = {
     "PCA": apply_pca,
 }
 
-clustering_algorithm_mapping = {
-    "K-MEANS": apply_k_means,
-    "BUTINA": apply_butina,
-    # "DBSCAN": apply_dbscan, # FIXME: Not working right now.
-    "HDBSCAN": apply_hdbscan,
-    # "WARD": None,
+
+@dataclass
+class ClusteringMethod:
+    name: str
+    function: Callable
+    experimented_param_name: str
+    experimented_param_default_values: List[Union[int, float]]
+
+    def __post_init__(self):
+        self.name = self.name.upper()
+
+
+CLUSTER_METHOD_MAPPING = {
+    "K-MEANS": ClusteringMethod(
+        name="K-MEANS",
+        function=apply_k_means,
+        experimented_param_name="n_clusters",
+        experimented_param_default_values=[2, 3, 5, 10, 20, 50, 100],
+    ),
+    "BUTINA": ClusteringMethod(
+        name="BUTINA",
+        function=apply_butina,
+        experimented_param_name="threshold",
+        experimented_param_default_values=[0.2, 0.35, 0.5, 0.8],
+    ),
+    # "DBSCAN": ClusteringMethod( # FIXME: Not working right now.
+    #     name="DBSCAN",
+    #     function=apply_dbscan,
+    #     experimented_param_name="min_samples",
+    #     experimented_param_default_values=[2, 3, 5, 10, 20, 50, 100],
+    # ),
+    "HDBSCAN": ClusteringMethod(
+        name="HDBSCAN",
+        function=apply_hdbscan,
+        experimented_param_name="min_cluster_size",
+        experimented_param_default_values=[2, 3, 5, 10, 20, 50, 100],
+    ),
+    "AGGLOMERATIVE": ClusteringMethod(
+        name="AGGLOMERATIVE",
+        function=apply_agglomerative,
+        experimented_param_name="n_clusters",
+        experimented_param_default_values=[2, 3, 5, 10, 20, 50, 100],
+    ),
+}
+
+
+MODELS_WITH_DIMS = {
+    "DeepChem/ChemBERTa-77M-MTR": 384,
+    "DeepChem/ChemBERTa-77M-MLM": 384,
+    "chemprop": 25,
+    "ecfp": 2048,
 }
 
 
 class ClusterRunner:
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         wandb_project_name: str,
         wandb_run_name: Optional[str] = None,
@@ -87,6 +139,14 @@ class ClusterRunner:
         self.num_threads = num_threads
         self.logged_plot_type = logged_plot_type
 
+        # Deepcopy dictionary values
+        self.wandb_extra_configs = deepcopy(self.wandb_extra_configs)
+
+        self.dimensionality_reduction_method_kwargs = deepcopy(
+            self.dimensionality_reduction_method_kwargs
+        )
+        self.clustering_method_kwargs = deepcopy(self.clustering_method_kwargs)
+
         self._init_checks()
 
         wandb.login()
@@ -105,6 +165,7 @@ class ClusterRunner:
                 "dataset_size": self.smiles_df.shape[0],
                 "dim_reduction": self.dimensionality_reduction_method,
                 **self.dimensionality_reduction_method_kwargs,
+                **self.clustering_method_kwargs,
                 **self.wandb_extra_configs,
             },
         )
@@ -117,9 +178,10 @@ class ClusterRunner:
             run.name = run.id
             self.wandb_run_name = run.id
 
-    def __del__(self):
-        if wandb.run is not None:
-            wandb.finish()
+    # FIXME: This gives error when looping.
+    # def __del__(self):
+    #     if wandb.run is not None:
+    #         wandb.finish()
 
     def _check_global_params(self, in_dict: Dict):
         for global_params in ["random_state", "device"]:
@@ -128,32 +190,60 @@ class ClusterRunner:
                     f"{global_params} should be provided through the Cluster class"
                 )
 
-    def _init_checks(self):
-        if self.smiles_df is None and self.smiles_df_path is None:
-            raise ValueError("Either smiles_df or smiles_df_path must be provided")
+    def _disable_dim_reduction(self, message: Optional[str] = None):
+        if message is None:
+            message = "Disabled dimensionality reduction."
 
-        if self.smiles_df_path is not None:
-            self.smiles_df_path = Path(self.smiles_df_path)
+        n_components = self.dimensionality_reduction_method_kwargs.get(
+            "n_components", None
+        )
 
-            if not self.smiles_df_path.exists():
-                raise FileNotFoundError(f"{self.smiles_df_path} does not exist")
+        self.dimensionality_reduction_method = None
+        self.dimensionality_reduction_method_kwargs = {}
+        self.dimensionality_reduction_func = None
 
-        model_names = [
-            "DeepChem/ChemBERTa-77M-MTR",
-            "DeepChem/ChemBERTa-77M-MLM",
-            "chemprop",
-            "ecfp",
-        ]
-        check_initialization_params(attr=self.model_name, accepted_list=model_names)
+        # Remove dimensionality reduction from wandb_run_name
+        self.wandb_run_name = self.wandb_run_name.replace(
+            f"_{self.dimensionality_reduction_method}", ""
+        )
 
-        check_device(device=self.device)
+        if n_components is not None:
+            self.wandb_run_name = self.wandb_run_name.replace(f"_{n_components}", "")
 
+        logger.info(message)
+
+    def _check_dim_reduction_init_params(self):
         check_initialization_params(
             attr=self.dimensionality_reduction_method,
             accepted_list=[None, *list(dimensionality_reduction_mapping.keys())],
         )
 
+        self.dimensionality_reduction_func = None
+
         if self.dimensionality_reduction_method is not None:
+            model_feature_dim = MODELS_WITH_DIMS[self.model_name]
+            n_components = self.dimensionality_reduction_method_kwargs.get(
+                "n_components", None
+            )
+
+            if n_components is None:
+                message = (
+                    "Dimensionality reduction dimension is not provided. "
+                    "Disabling dimensionality reduction."
+                )
+                self._disable_dim_reduction(message=message)
+
+                return
+            if n_components > model_feature_dim:
+                message = (
+                    f"Dimensionality reduction dimension ({n_components}) "
+                    f"cannot be greater than model's feature dimension ({model_feature_dim}). "
+                    "Disabling dimensionality reduction."
+                )
+                self._disable_dim_reduction(message=message)
+
+                return
+
             self.dimensionality_reduction_func = dimensionality_reduction_mapping[
                 self.dimensionality_reduction_method
             ]
@@ -166,15 +256,40 @@ class ClusterRunner:
                 function=self.dimensionality_reduction_func,
                 init_params=self.dimensionality_reduction_method_kwargs,
             )
-        else:
-            self.dimensionality_reduction_func = None
+
+        if (
+            self.model_name == "ecfp"
+            and self.clustering_method == "BUTINA"
+            and self.dimensionality_reduction_method == "UMAP"
+        ):
+            message = (
+                "Disabling UMAP dimensionality reduction, since it is not working "
+                "for BUTINA clustering with ecfp model."
+            )
+            self._disable_dim_reduction(message=message)
+
+    def _init_checks(self):
+        if self.smiles_df is None and self.smiles_df_path is None:
+            raise ValueError("Either smiles_df or smiles_df_path must be provided")
+
+        if self.smiles_df_path is not None:
+            self.smiles_df_path = Path(self.smiles_df_path)
+
+            if not self.smiles_df_path.exists():
+                raise FileNotFoundError(f"{self.smiles_df_path} does not exist")
+
+        check_initialization_params(
+            attr=self.model_name, accepted_list=list(MODELS_WITH_DIMS.keys())
+        )
+
+        check_device(device=self.device)
 
         check_initialization_params(
             attr=self.clustering_method,
-            accepted_list=list(clustering_algorithm_mapping.keys()),
+            accepted_list=list(CLUSTER_METHOD_MAPPING.keys()),
         )
 
-        self.clustering_func = clustering_algorithm_mapping[self.clustering_method]
+        self.clustering_func = CLUSTER_METHOD_MAPPING[self.clustering_method].function
 
         self._check_global_params(in_dict=self.clustering_method_kwargs)
 
@@ -183,28 +298,27 @@ class ClusterRunner:
             init_params=self.clustering_method_kwargs,
         )
 
-        if (
-            self.clustering_method == "BUTINA"
-            and self.model_name == "ecfp"
-            and self.dimensionality_reduction_func is not None
-        ):
-            self.dimensionality_reduction_func = None
-
-            message = (
-                "Disabling dimensionality reduction, since it is not working "
-                "for BUTINA clustering with ecfp model"
-            )
-
-            logger.info(message)
-
         check_initialization_params(
             attr=self.logged_plot_type, accepted_list=["static", "dynamic"]
         )
 
+        if self.clustering_method == "HDBSCAN":
+            metric = self.clustering_method_kwargs.get("metric", None)
+
+            if metric == "jaccard" and self.device == "cuda":
+                self.clustering_method_kwargs["metric"] = "euclidean"
+
+                logger.info(
+                    "Using euclidean distance instead of jaccard metric, "
+                    "since cuml doesn't support jaccard for HDBSCAN."
+                )
+
+        self._check_dim_reduction_init_params()
+
     def run_vector_embeddings(self):
         """
         # TODO:
-            - Make `radiues` and `nBits` configurable
+            - Make `radius` and `nBits` configurable
         """
         if self.vector_embeddings is not None:
             return
@@ -229,14 +343,11 @@ class ClusterRunner:
 
             wandb.config.update({"radius": radius, "nBits": nBits})
 
-            # FIXME: Dimensionality reduction is not working with original
-            return_type = "original" if self.clustering_method == "BUTINA" else "numpy"
-
             self.vector_embeddings = get_ecfp_descriptors(
                 smiles_series=self.smiles_df["text"],
                 radius=radius,
                 nBits=nBits,
-                inner_return_type=return_type,
+                inner_return_type="numpy",
             )
 
     def run_dimensionality_reduction(self):
@@ -251,11 +362,6 @@ class ClusterRunner:
             self.dimensionality_reduction_flag = True
 
     def _run_butina_distance_matrix(self) -> None:
-        """
-        NOTE
-            - Needs ecfp vector embeddings as ExplicitBitVect, not numpy array
-        """
-
         if self.distance_matrix is not None:
             return
 
@@ -275,9 +381,6 @@ class ClusterRunner:
 
         self.clustering_method_kwargs["nfps"] = nfps
         self.clustering_method_kwargs["is_distance_matrix"] = True
-
-        # NOTE: Ecfp vector embeddings don't work with cuml silhoutte since they are list
-        self.vector_embeddings = np.array(self.vector_embeddings, dtype=np.float32)
 
     def log_umap_2D(
         self,
@@ -325,10 +428,7 @@ class ClusterRunner:
         if "labels" not in self.smiles_df.columns:
             return False
 
-        if len(self.smiles_df["labels"].unique()) == 1:
-            return False
-
-        return True
+        return len(self.smiles_df["labels"].unique()) != 1
 
     def evaluate_clusters(
         self, cluster_labels: np.array, inertia: Optional[float] = None
@@ -336,6 +436,9 @@ class ClusterRunner:
         """In silhouete score: target: vector_embeddings, labels: cluster_labels
         In adjusted rand index: target: smiles_df["labels"], labels: cluster_labels
         """
+
+        if is_valid_cluster_labels(labels=cluster_labels) is False:
+            return
 
         for clustering_evaluation_method in CLUSTERING_EVALUATION_METRICS:
             if not clustering_evaluation_method.need_true_labels:
@@ -354,31 +457,39 @@ class ClusterRunner:
                 if target.dtype == "object":
                     target = pd.factorize(target)[0]
 
-            score = clustering_evaluation_method.function(
-                target=target,
-                labels=cluster_labels,
-                device=self.device,
-            )
+            device = self.device
 
-            logged_data = {clustering_evaluation_method.name: score}
+            # FIXME: Fix for chembl27 dataset. Why this is happening ?
+            # if self.clustering_method == "BUTINA" and self.device == "cuda":
+            #     device = "cpu"
+            #     logger.info(
+            #         "cuML evaluation metrics doesn't work on BUTINA somehow."
+            #         "Hence, using CPU for calculating metrics."
+            #     )
 
-            extra_logged_data_mapping = {
-                "K-MEANS": "n_clusters",
-                "BUTINA": "threshold",
-                "DBSCAN": "min_samples",
-                "HDBSCAN": "min_cluster_size",
-            }
+            try:
+                score = clustering_evaluation_method.function(
+                    target=target,
+                    labels=cluster_labels,
+                    device=device,
+                )
+            except cupy.cuda.driver.CUDADriverError as e:
+                score = logger.error(
+                    f"{clustering_evaluation_method.name} can't be calculated,"
+                    f"because of a CUDADriverError: {e}"
+                )
+                continue
+
+            if score is not None:
+                logged_data = {clustering_evaluation_method.name: score}
 
             if inertia is not None:
                 logged_data["inertia"] = inertia
 
-            if self.clustering_method not in extra_logged_data_mapping:
-                raise ValueError(
-                    f"Extra logged data mapping not present for {self.clustering_method}"
-                )
-
             # logged_data.update(extra_logged_data_mapping[self.clustering_method])
-            added_key = extra_logged_data_mapping[self.clustering_method]
+            added_key = CLUSTER_METHOD_MAPPING[
+                self.clustering_method
+            ].experimented_param_name
             added_value = self.clustering_method_kwargs.get(added_key, None)
 
             # NOTE: Get default values from function
@@ -400,6 +511,8 @@ class ClusterRunner:
 
         clustering_kwargs = self.clustering_method_kwargs
         clustering_kwargs["data"] = self.vector_embeddings
+        clustering_kwargs["random_state"] = self.random_state
+        clustering_kwargs["device"] = self.device
 
         # Don't calculate distance matrix each time
         if self.clustering_method == "BUTINA":
@@ -427,49 +540,47 @@ class ClusterRunner:
         else:
             self._run_clustering()
 
-    def run_multiple_clustering(  # noqa: C901
+    def run_multiple_clustering(
         self,
-        n_clusters: Optional[List[int]] = None,
-        thresholds: Optional[List[float]] = None,
-        min_samples: Optional[List[int]] = None,
-        min_cluster_sizes: Optional[List[int]] = None,
+        input_clustering_param_dict: Optional[
+            Dict[str, Optional[Union[int, float]]]
+        ] = None,
     ):
-        if self.clustering_method == "K-MEANS":
-            if n_clusters is None:
-                n_clusters = [2, 3, 5, 10, 20, 50, 100]
+        clustering_method_class = CLUSTER_METHOD_MAPPING[self.clustering_method]
+        experimented_param_name = clustering_method_class.experimented_param_name
+        experimented_param_default_values = (
+            clustering_method_class.experimented_param_default_values
+        )
 
-            for n_cluster in n_clusters:
-                # NOTE: All clustering functions should implement n_clusters as a parameter
-                self.clustering_method_kwargs["n_clusters"] = n_cluster
+        if input_clustering_param_dict is None:
+            input_clustering_param_dict = {}
 
-                self.run_clustering()
+        experimented_param_input_values = input_clustering_param_dict.get(
+            experimented_param_name, None
+        )
 
-        elif self.clustering_method == "BUTINA":
-            if thresholds is None:
-                thresholds = [0.2, 0.35, 0.5, 0.8]
+        if experimented_param_input_values is None:
+            experimented_param_input_values = experimented_param_default_values
 
-            for threshold in thresholds:
-                self.clustering_method_kwargs["threshold"] = threshold
+            logger.info(
+                f"{experimented_param_name} is not provided."
+                f"Hence using default values, {experimented_param_default_values}"
+            )
 
-                self.run_clustering()
+        for experimented_param_input_value in experimented_param_input_values:
+            self.clustering_method_kwargs[experimented_param_name] = (
+                experimented_param_input_value
+            )
 
-        elif self.clustering_method == "DBSCAN":
-            if min_samples is None:
-                min_samples = [2, 3, 5, 10, 20, 50, 100]
+            logger.info(
+                f"Running clustering for {experimented_param_name}: {experimented_param_input_value}"
+            )
 
-            for min_sample in min_samples:
-                self.clustering_method_kwargs["min_samples"] = min_sample
+            self.run_clustering()
 
-                self.run_clustering()
-
-        elif self.clustering_method == "HDBSCAN":
-            if min_cluster_sizes is None:
-                min_cluster_size = [2, 3, 5, 10, 20, 50, 100]
-
-            for min_cluster_size in min_cluster_sizes:
-                self.clustering_method_kwargs["min_cluster_size"] = min_cluster_size
-
-                self.run_clustering()
+        # NOTE: Not the best place to do this
+        if wandb.run is not None:
+            wandb.finish()
 
 
 if __name__ == "__main__":

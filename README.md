@@ -6,36 +6,47 @@
 PUID=<REDACTED>
 PGID=<REDACTED>
 DAGSTER_HOME=<REDACTED>
+WANDB_USER_NAME=<REDACTEd>
 WANDB_API_KEY=<REDACTED>
 ```
 
-
 ## Default installation
 
-- Install poetry
+- Install uv system-wide
 
 ```bash
-curl -sSL https://install.python-poetry.org | python3 -
+make -s install-uv
 ```
 
 - Install the project dependencies
 
 ```bash
-conda create -n thesis-work python=3.10 -y
-conda activate thesis-work
 make -s install
 ```
 
-- After running above command, the project installed in editable mode with all development and test dependencies installed.
-- Moreover, a dummy `entry point` called `placeholder` will be available as a cli command.
+### GPU Installations
+
+#### CUDA
+
+- `nvcc -V`
+
+```bash
+function lib_installed() { /sbin/ldconfig -N -v $(sed 's/:/ /' <<< $LD_LIBRARY_PATH) 2>/dev/null | grep $1; }
+function check() { lib_installed $1 && echo "$1 is installed" || echo "ERROR: $1 is NOT installed"; }
+
+# Check if cuda is installed
+check libcuda
+check libcudart
+
+# Check if cudnn is installed
+check libcudnn
+```
 
 ## Docker
 
 ```bash
-# Development build (800 MB)
 docker build --tag thesis-work --file docker/Dockerfile --target development .
 
-# Production build (145 MB)
 docker build --tag thesis-work --file docker/Dockerfile --target production .
 ```
 

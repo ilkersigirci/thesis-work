@@ -3,7 +3,7 @@ import leidenalg as la
 import numpy as np
 
 
-def apply_leidenalg(distance_matrix):
+def apply_leidenalg(distance_matrix: np.array):
     """Apply leidenalg clustering on given distance matrix."""
     g = ig.Graph.Weighted_Adjacency(distance_matrix.tolist(), mode="upper")
     partition = la.find_partition(g, la.ModularityVertexPartition)

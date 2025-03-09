@@ -267,9 +267,10 @@ cython_debug/
 
 data/*
 vectors
-!data/chembl30
+!data/ataberk
+!data/chembl_30
+!data/moleculenet
 !data/protein_family
-!data/property_prediction
 !data/related_work
 
 /.ruff_cache/

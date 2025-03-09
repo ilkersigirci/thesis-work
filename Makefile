@@ -2,21 +2,16 @@
 # chain commands together with semicolon
 .ONESHELL:
 SHELL=/bin/bash
-ROOT_DIR=thesis-work
 PACKAGE=thesis_work
-PYTHON = python
-PYTHON_VERSION=3.10
-DOC_DIR=./docs
-TEST_DIR=./tests
-TEST_MARKER=placeholder
-TEST_OUTPUT_DIR=tests_outputs
 PRECOMMIT_FILE_PATHS=./thesis_work/__init__.py
 PROFILE_FILE_PATH=./thesis_work/__init__.py
-PYPI_URLS=
 DOCKER_IMAGE=thesis-work
 DOCKER_TARGET=development
 
-.PHONY: help install test clean build publish doc pre-commit format lint profile docker gui
+# Add timeout for uv operations (1800 seconds)
+export UV_HTTP_TIMEOUT=1800
+
+.PHONY: help install pre-commit format lint docker gui
 .DEFAULT_GOAL=help
 
 help:
@@ -31,204 +26,70 @@ ifeq ($(shell test -f .env && echo 1),1)
 endif
 
 python-info: ## List information about the python environment
-	@which ${PYTHON}
-	@${PYTHON} --version
+	@which uv run python
+	uv run python --version
 
-update-pip:
-	${PYTHON} -m pip install -U pip
+install-uv: ## Install uv
+	! command -v uv &> /dev/null && curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="$$HOME/.local/bin" sh
+	source $$HOME/.local/bin/env bash
 
-install-poetry: ## Install poetry if it is not already installed (Installing poetry with official method is recommended)
-	$(MAKE) update-pip
-	! command -v poetry &> /dev/null && pip install poetry==1.5.1
-	# poetry config virtualenvs.create false
-	# poetry config repositories.private-pypi <PRIVATE_PYPI_URL>
-	# poetry config http-basic.private-pypi ${PYPI_USERNAME} ${PYPI_PASSWORD}
-
-create-conda:
-	@conda create -n ${ROOT_DIR} python=${PYTHON_VERSION} -y
+update-uv: ## Update uv to the latest version
+	@uv self update
 
 install-base: ## Installs only package dependencies
-	############# PIP ############
-	# $(MAKE) update-pip
-	# pip install ${PYPI_URLS} --editable .
-	########### POETRY ###########
-	$(MAKE) install-poetry
-	poetry install --only-root
+	uv sync --frozen --no-dev --no-install-project
 
-install: ## Installs the development and test version of the package
-	############# PIP ############
-	# $(MAKE) update-pip
-	# pip install ${PYPI_URLS} --editable .[test,doc,dev]
-	########### POETRY ###########
-	$(MAKE) install-poetry
-	poetry install
-
+install: ## Installs the development version of the package
+	$(MAKE) install-uv
+	$(MAKE) update-uv
+	@uv sync --frozen
 	$(MAKE) install-precommit
 
-install-no-cache: ## Installs the development and test version of the package
-	############# PIP ############
-	# $(MAKE) update-pip
-	# pip install --no-cache-dir ${PYPI_URLS} --editable .[test,dev]
-	########### POETRY ###########
-	$(MAKE) install-poetry
-	poetry install --no-cache
-
+install-no-cache: ## Installs the development version of the package without cache
+	$(MAKE) install-uv
+	$(MAKE) update-uv
+	uv sync --frozen --no-cache
 	$(MAKE) install-precommit
-
-install-test: ## Install only test version of the package
-	############# PIP ############
-	# $(MAKE) update-pip
-	# pip install ${PYPI_URLS} .[test]
-	########### POETRY ###########
-	$(MAKE) install-poetry
-	poetry install --without dev
 
 install-precommit: ## Install pre-commit hooks
-	pre-commit install
+	uv run pre-commit install
 
-install-lint:
-	pip install black[d]==23.1.0 ruff==0.0.285
+update-dependencies: ## Updates the lockfiles and installs dependencies. Dependencies are updated if necessary
+	uv sync
 
-install-build:
-	############# PIP ############
-	# pip install build
-	########### POETRY ###########
-	$(MAKE) install-poetry
-
-install-publish:
-	############# PIP ############
-	# pip install twine
-	########### POETRY ###########
-	$(MAKE) install-poetry
-
-install-doc:
-	pip install mkdocs mkdocs-material mkdocstrings[python]
-
-test-one: ## Run specific tests with TEST_MARKER=<test_name>, default marker is `placeholder`
-	${PYTHON} -m pytest -m ${TEST_MARKER}
-
-test-one-parallel: ## Run specific tests with TEST_MARKER=<test_name> in parallel, default marker is `placeholder`
-	${PYTHON} -m pytest -n auto -m ${TEST_MARKER}
-
-test-all: ## Run all tests
-	# mkdir -p ${TEST_OUTPUT_DIR}
-	# cp .coveragerc ${TEST_OUTPUT_DIR}
-	# cp setup.cfg ${TEST_OUTPUT_DIR}
-	${PYTHON} -m pytest
-
-test-all-parallel: ## Run all tests with parallelization
-	${PYTHON} -m pytest -n auto
-
-test-coverage: ## Run all tests with coverage
-	${PYTHON} -m pytest --cov=${PACKAGE} --cov-report=html:coverage
-
-test-coverage-parallel:
-	${PYTHON} -m pytest -n auto --cov=${PACKAGE} --cov-report=html:coverage
-
-test-docs: ## Test documentation examples with doctest
-	${PYTHON} -m pytest --doctest-modules ${PACKAGE}
-
-test: clean-test test-all ## Cleans and runs all tests
-test-parallel: clean-test test-all-parallel ## Cleans and runs all tests with parallelization
-
-clean-build: ## Clean build dist and egg directories left after install
-	rm -rf ./dist
-	rm -rf ./build
-	rm -rf ./pytest_cache
-	rm -rf ./junit
-	rm -rf ./$(PACKAGE).egg-info
-	find . -type f -iname "*.so" -delete
-	find . -type f -iname '*.pyc' -delete
-	# find . -type d -name '$(PACKAGE).egg-info' -empty -delete
-	find . -type d -name '*.egg-info' -prune -exec rm -rf {} \;
-	find . -type d -name '__pycache__' -prune -exec rm -rf {} \;
-	find . -type d -name '.ruff_cache' -prune -exec rm -rf {} \;
-	find . -type d -name '.mypy_cache' -prune -exec rm -rf {} \;
-
-clean-test: ## Clean test related files left after test
-	# rm -rf ./htmlcov
-	# rm -rf ./coverage.xml
-	find . -type f -regex '\.\/\.*coverage[^rc].*' -delete
-	rm -rf ${TEST_OUTPUT_DIR}
-	find ${TEST_DIR} -type f -regex '\.\/\.*coverage[^rc].*' -delete
-	find ${TEST_DIR} -type d -name 'htmlcov' -exec rm -r {} +
-	find . -type d -name '.pytest_cache' -prune -exec rm -rf {} \;
-
-clean: clean-build clean-test ## Cleans build and test related files
-
-# TODO: Remove poetry-installation
-build: ## Make Python source distribution
-	############# PIP ############
-	# ${PYTHON} -m build --sdist --outdir dist
-	########### POETRY ###########
-	$(MAKE) install-poetry
-	poetry build --format sdist
-
-# TODO: Remove poetry-installation
-build-wheel: ## Make Python wheel distribution
-	############# PIP ############
-	# ${PYTHON} -m build --wheel --outdir dist
-	########### POETRY ###########
-	$(MAKE) install-poetry
-	poetry build --format wheel
-
-# TODO: Implement this
-publish: ## Builds the project and publish the package to Pypi
-	$(MAKE) build
-
-	############# PIP ############
-	# twine upload dist/* --verbose --config-file .pypirc
-	########### POETRY ###########
-	# poetry publish -r private-pypi -u ${PYPI_USERNAME} -p ${PYPI_PASSWORD}
-	poetry publish -r private-pypi
-
-doc: ## Build documentation with mkdocs
-	mkdocs build
-
-doc-github: ## Build documentation with mkdocs and deploy to github pages
-	mkdocs gh-deploy --force
-
-doc-dev: ## Show documentation preview with mkdocs
-	mkdocs serve -w ${PACKAGE}
+upgrade-dependencies: ## Updates the lockfiles and installs the latest version of the dependencies
+	uv sync -U
 
 pre-commit-one: ## Run pre-commit with specific files
-	pre-commit run --files ${PRECOMMIT_FILE_PATHS}
+	uv lock --locked
+	uv run pre-commit run --files ${PRECOMMIT_FILE_PATHS}
 
 pre-commit: ## Run pre-commit for all package files
-	pre-commit run --all-files
+	uv lock --locked
+	uv run pre-commit run --all-files
 
 pre-commit-clean: ## Clean pre-commit cache
-	pre-commit clean
+	uv run pre-commit clean
 
-lint: ## Lint code with black, ruff
-	${PYTHON} -m black ${PACKAGE} --check --diff
-	${PYTHON} -m ruff check ${PACKAGE}
+lint: ## Lint code with ruff
+	uv lock --locked
+	uv run --module ruff format ${PACKAGE} --check --diff
+	uv run --module ruff check ${PACKAGE}
 
 lint-report: ## Lint report for gitlab
-	${PYTHON} -m black ${PACKAGE} --check --diff
-	${PYTHON} -m ruff check ${PACKAGE} --format gitlab > gl-code-quality-report.json
+	uv lock --locked
+	uv run --module ruff format ${PACKAGE} --check --diff
+	uv run --module ruff check ${PACKAGE} --format gitlab > gl-code-quality-report.json
 
-format: ## Run black, ruff for all package files. CHANGES CODE
-	${PYTHON} -m black ${PACKAGE}
-	${PYTHON} -m ruff check ${PACKAGE} --fix --show-fixes
+format: ## Run ruff for all package files. CHANGES CODE
+	uv lock --locked
+	uv run --module ruff format ${PACKAGE}
+	uv run --module ruff check ${PACKAGE} --fix --show-fixes
 
-typecheck:  ## Checks code with mypy
-	${PYTHON} -m mypy --package ${PACKAGE}
-
-typecheck-no-cache:  ## Checks code with mypy no cache
-	${PYTHON} -m mypy --package ${PACKAGE} --no-incremental
-
-typecheck-report: ## Checks code with mypy and generates html report
-	${PYTHON} -m mypy --package ${PACKAGE} --html-report mypy_report
-
-profile: ## Profile the file with scalene and shows the report in the terminal
-	${PYTHON} -m scalene --cli --reduced-profile ${PROFILE_FILE_PATH}
-
-profile-gui: ## Profile the file with scalene and shows the report in the browser
-	${PYTHON} -m scalene ${PROFILE_FILE_PATH}
-
-profile-builtin: ## Profile the file with cProfile and shows the report in the terminal
-	${PYTHON} -m cProfile -s tottime ${PROFILE_FILE_PATH}
+format-unsafe: ## Run ruff for all package files. CHANGES CODE
+	uv lock --locked
+	uv run --module ruff format ${PACKAGE}
+	uv run --module ruff check ${PACKAGE} --fix --unsafe-fixes --show-fixes
 
 dagster-dev:  ## Run dagster development env with environment variables
 	dagster-webserver - p 3006
@@ -237,8 +98,12 @@ dagster-dev:  ## Run dagster development env with environment variables
 docker: ## Build docker image
 	docker build --tag ${DOCKER_IMAGE}:${DOCKER_TARGET} --file docker/Dockerfile --target ${DOCKER_TARGET} .
 
-run-file: ## Run python file with python with exported env variables
-	${PYTHON} ${FILE_PATH}
-
 gui: ## Run GUI with streamlit
 	streamlit run thesis_work/gui/index.py
+
+docker-gpu-commands:
+	# docker compose -f docker-compose_gpu.yaml build thesis-work-gpu
+	# docker compose -f docker-compose_gpu.yaml up thesis-work-gpu -d
+	# docker compose -f docker-compose_gpu.yaml down
+
+	# docker exec -it <container_id> /bin/bash

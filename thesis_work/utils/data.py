@@ -4,8 +4,8 @@ from typing import List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
-
 from thesis_work.cv.split import create_folds
+from thesis_work.utils.initialization import check_initialization_params
 from thesis_work.utils.molnet_dataloader import load_molnet_dataset
 from thesis_work.utils.utils import is_valid_smiles
 
@@ -18,31 +18,110 @@ logger = logging.getLogger(__name__)
 def _sample_data(
     df: pd.DataFrame, sample_size: Optional[int] = None, random_state: int = 42
 ):
+    """Samples data while preserving label ratio."""
     if sample_size is None:
         return df
 
     if len(df) < sample_size:
         logger.warning(
             f"Sample size is {sample_size} is greater than number of data is {len(df)}."
+            f"Hence, sample size is set to {len(df)}."
         )
+        sample_size = len(df)
 
-    df = df.sample(n=sample_size, random_state=random_state)
+    unique_labels = df["labels"].unique()
 
-    return df
+    # If df has labels column, then sample by preserving label 0 and 1 ratio
+    if len(unique_labels) == 1:
+        return df.sample(n=sample_size, random_state=random_state)
+
+    # If there are multiple unique labels, sample while preserving ratio
+    label_counts = df["labels"].value_counts()
+    label_ratios = label_counts / label_counts.sum()
+    sample_sizes = (label_ratios * sample_size).astype(int)
+
+    dfs = []
+    for label in unique_labels:
+        df_label = df[df["labels"] == label]
+        sample_size_label = sample_sizes[label]
+        if sample_size_label > len(df_label):
+            logger.warning(
+                f"Sample size for label {label} is greater than number of data is {len(df_label)}."
+                f"Hence, sample size is set to {len(df_label)}."
+            )
+            sample_size_label = len(df_label)
+        df_label = df_label.sample(
+            n=sample_size_label, random_state=random_state, replace=False
+        ).reset_index(drop=True)
+        dfs.append(df_label)
+
+    return pd.concat(dfs, axis=0, ignore_index=True)
 
 
-def load_chembl(sample_size: Optional[int] = None, random_state: int = 42):
+def _merge_with_vectors(df: pd.DataFrame, vectors: pd.DataFrame):
+    """Merges data with vectors"""
+    return df.merge(vectors, on="text", how="left")
+
+
+def load_ataberk(
+    subfolder: int,
+    compound_name: str,
+    return_vectors: bool = False,
+    sample_size: Optional[int] = None,
+    random_state: int = 42,
+):
+    """Loads data from Ataberk's data"""
+
+    check_initialization_params(
+        attr=subfolder, accepted_list=["chembl27", "dude", "zinc15"]
+    )
+
+    check_initialization_params(
+        attr=compound_name,
+        accepted_list=["abl1", "renin", "thb", "zinc15-minor-targets"],
+    )
+
+    data_root_path = DATA_PATH / "ataberk" / subfolder
+    data_smiles_path = data_root_path / "smiles" / f"{compound_name}.csv"
+
+    loaded_data = pd.read_csv(data_smiles_path)
+
+    if subfolder == "chembl27":
+        loaded_data = loaded_data.drop(columns=["ChEMBL"], axis=1)
+
+    if subfolder == "zinc15":
+        loaded_data["labels"] = 0
+
+    if return_vectors is True:
+        data_vectors_path = data_root_path / "vectors" / f"{compound_name}.csv"
+        vectors_df = pd.read_csv(data_vectors_path)
+
+        loaded_data = _merge_with_vectors(df=loaded_data, vectors=vectors_df)
+
+    return _sample_data(loaded_data, sample_size=sample_size, random_state=random_state)
+
+
+def load_chembl_30(sample_size: Optional[int] = None, random_state: int = 42):
     # TODO: Change column names
 
-    data_path = DATA_PATH / "chembl" / "smiles.tar.xz"
-    df = pd.read_csv(data_path, compression="xz", sep="\t")
+    data_path = DATA_PATH / "chembl_30" / "smiles.tar.xz"
+    loaded_data = pd.read_csv(data_path, compression="xz", sep="\t")
 
-    return _sample_data(df, sample_size=sample_size, random_state=random_state)
+    return _sample_data(loaded_data, sample_size=sample_size, random_state=random_state)
 
 
-# TODO
-def load_property_prediction():
-    pass
+def load_moleculenet(task: str = "bace", sample_size: Optional[int] = None):
+    """Loads data of MoleculeNet property prediction classification tasks."""
+    # TODO: Change column names for each task
+
+    check_initialization_params(
+        attr=task, accepted_list=["bace", "bbbp", "clintox", "hiv", "sider", "tox21"]
+    )
+
+    data_path = DATA_PATH / "moleculenet" / f"{task}.csv"
+    loaded_data = pd.read_csv(data_path)
+
+    return _sample_data(loaded_data, sample_size=sample_size)
 
 
 def load_protein_family(
@@ -53,13 +132,13 @@ def load_protein_family(
 ) -> pd.DataFrame:
     """ "Loads data"""
     data_path = DATA_PATH / "protein_family" / f"{protein_type}.csv"
-    df = pd.read_csv(data_path)
-    df.columns = ["text", "labels"]
+    loaded_data = pd.read_csv(data_path)
+    loaded_data.columns = ["text", "labels"]
 
     if interacted_only is True:
-        df = df[df["labels"] == 1]
+        loaded_data = loaded_data[loaded_data["labels"] == 1]
 
-    return _sample_data(df, sample_size=sample_size, random_state=random_state)
+    return _sample_data(loaded_data, sample_size=sample_size, random_state=random_state)
 
 
 def load_protein_family_multiple_interacted(
@@ -74,19 +153,31 @@ def load_protein_family_multiple_interacted(
     """
     result = pd.DataFrame()
 
-    each_sample_size = sample_size / len(protein_types)
+    protein_types_actives_mapping = {
+        "gpcr": 36_924,
+        "ionchannel": 5_996,
+        "kinase": 35_531,
+        "nuclearreceptor": 5_099,
+        "protease": 15_718,
+        "transporter": 3_666,
+    }
 
-    if isinstance(each_sample_size, float):
-        each_sample_size = int(each_sample_size)
-        logger.info(
-            f"Sample size: {sample_size} is not divisible by number of protein types."
-            "Hence, each protein type will be sampled by {each_sample_size}"
-        )
+    maximum_sample_size = min(protein_types_actives_mapping.values())
 
     if protein_types is None:
-        protein_types = ["gpcr", "kinase", "protease"]
+        protein_types = list(protein_types_actives_mapping.keys())
 
     protein_types.sort()
+
+    each_sample_size = sample_size // len(protein_types)
+
+    if each_sample_size > maximum_sample_size:
+        logger.info(
+            f"Each sample size: {each_sample_size} is greater than the lower value in "
+            "the protein_types_actives_mapping. Hence, each protein type will be "
+            f"sampled by {maximum_sample_size}"
+        )
+        each_sample_size = maximum_sample_size
 
     for protein_type in protein_types:
         data = load_protein_family(
@@ -127,25 +218,25 @@ def load_protein_family_splits(
         )
 
     else:
-        df = load_protein_family(protein_type=protein_type)
+        loaded_data = load_protein_family(protein_type=protein_type)
 
         if fixed_cv is True:
-            len_data = len(df)
+            len_data = len(loaded_data)
             fold_list = create_folds(length=len_data)
             train_indices = [item for sublist in fold_list[:5] for item in sublist]
             test_indices = fold_list[5]
 
-            train_df = df.iloc[train_indices]
+            train_df = loaded_data.iloc[train_indices]
             valid_df = None
-            test_df = df.iloc[test_indices]
+            test_df = loaded_data.iloc[test_indices]
 
         else:
-            df = df.sample(frac=1, random_state=42)
+            loaded_data = loaded_data.sample(frac=1, random_state=42)
 
             train_df, valid_df, test_df = np.split(
                 # df.sample(frac=1), [int(0.6 * len(df)), int(0.8 * len(df))]
-                df.sample(frac=1),
-                [int(0.8 * len(df)), int(0.9 * len(df))],
+                loaded_data.sample(frac=1),
+                [int(0.8 * len(loaded_data)), int(0.9 * len(loaded_data))],
             )
 
     return train_df, valid_df, test_df
@@ -157,15 +248,18 @@ def load_related_work(
 ):
     """Loads data from related work"""
     data_path = DATA_PATH / "related_work" / "unbiased" / "compound_annotation.csv"
-    df = pd.read_csv(data_path, usecols=["SMILES"])
-    df = df.rename(columns={"SMILES": "text"})
+    loaded_data = pd.read_csv(data_path, usecols=["SMILES"])
+    loaded_data = loaded_data.rename(columns={"SMILES": "text"})
 
     # FIXME: Df has no labels. This is a temporary fix.
-    df["labels"] = 0
+    loaded_data["labels"] = 0
 
-    df = df[df["text"].apply(is_valid_smiles)]
+    loaded_data = loaded_data[loaded_data["text"].apply(is_valid_smiles)]
 
-    return _sample_data(df, sample_size=sample_size, random_state=random_state)
+    # Reset index
+    loaded_data = loaded_data.reset_index(drop=True)
+
+    return _sample_data(loaded_data, sample_size=sample_size, random_state=random_state)
 
 
 def save_data(df: pd.DataFrame, name: str, subfolder: str = "result_data"):

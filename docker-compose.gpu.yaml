@@ -1,0 +1,47 @@
+version: "3.9"
+name: thesis-work-gpu
+
+networks:
+  thesis_work_gpu:
+      name: thesis_work_gpu
+      driver: bridge
+
+services:
+  thesis-work-gpu:
+    container_name: thesis-work-gpu
+    image: thesis-work-gpu:latest
+    # privileged: true
+    shm_size: 128gb # To avoid `RuntimeError: DataLoader worker (pid 13) is killed by signal`. Should be always less than total RAM
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile_gpu
+      target: development
+      args:
+        PUID: ${PUID}
+        PGID: ${PGID}
+    command: sleep infinity # To make sure that the container does not exit
+    restart: "no"
+    networks:
+      - thesis_work_gpu
+    volumes:
+      - ./docker-compose_gpu.yaml:/thesis-work/docker-compose_gpu.yaml
+      - ./docker:/thesis-work/docker
+      - ./experiments:/thesis-work/experiments
+      - ./notebooks:/thesis-work/notebooks
+      - ./thesis_work:/thesis-work/thesis_work
+    # env_file:
+    #   - .env
+    # environment:
+    #   NODE_ENV: production
+    deploy:
+      resources:
+        reservations:
+          # cpus: '0.7'
+          # memory: 256G
+          devices:
+            - driver: nvidia
+              count: 2
+              capabilities: [gpu]
+        # limits: # NOTE: Doesn't work
+        #   cpus: '0.7'
+        #   memory: 256G

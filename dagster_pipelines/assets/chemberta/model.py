@@ -16,13 +16,13 @@ from pydantic import Field
 from simpletransformers.classification import ClassificationModel
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import KFold
-
-from dagster_pipelines.resources.wandb import WandbResource
 from thesis_work.chemberta.utils import (
     evaluate_model as evaluate_model_util,
     get_model,
     train_model as train_model_util,
 )
+
+from dagster_pipelines.resources.wandb import WandbResource
 
 
 class MyModelConfig(Config):
@@ -74,7 +74,7 @@ def train_model(
         # TODO: Reinitialize model for each fold
         # TODO: average_precision_score can be added to eval
         for i, (train_index, val_index) in enumerate(kfold.split(train_df_asset)):
-            context.log.info(f"Fold: {i+1}")
+            context.log.info(f"Fold: {i + 1}")
 
             model = deepcopy(initialize_model)
             model.args.overwrite_output_dir = True
@@ -153,4 +153,4 @@ if __name__ == "__main__":
         ),
         resources={"wandb_resource": WandbResource(apikey=EnvVar("WANDB_API_KEY"))},
     )
-    print(result.output_for_node("initialize_model"))  # noqa: T201
+    print(result.output_for_node("initialize_model"))

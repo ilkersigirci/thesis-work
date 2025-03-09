@@ -1,4 +1,5 @@
 """train_test_5_fold"""
+
 import os
 import random
 
@@ -7,12 +8,10 @@ def create_folds(length: int):
     random.seed(69)
     n = 6
 
-    dtiList = list(range(0, length))
+    dtiList = list(range(length))
 
     random.shuffle(dtiList)
-    newList = [dtiList[i::n] for i in range(n)]
-
-    return newList
+    return [dtiList[i::n] for i in range(n)]
 
 
 def write_folds(FileName, dti_list):

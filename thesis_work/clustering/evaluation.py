@@ -4,15 +4,21 @@ NOTE:
     To fix TypeError: Expected input to be of type in [dtype('int64')] but got int32
 """
 
+import logging
 from dataclasses import dataclass
 
+import numpy as np
+import pandas as pd
+import seaborn as sns
 from cuml.metrics.cluster import (
     adjusted_rand_score as cuml_adjusted_rand_score,
     completeness_score as cuml_completeness_score,
     homogeneity_score as cuml_homogeneity_score,
     mutual_info_score as cuml_mutual_info_score,
+    silhouette_samples as cuml_silhouette_samples,
     silhouette_score as cuml_silhouette_score,
 )
+from matplotlib import cm
 from sklearn.metrics import (
     adjusted_rand_score as sklearn_adjusted_rand_score,
     calinski_harabasz_score,
@@ -20,6 +26,7 @@ from sklearn.metrics import (
     davies_bouldin_score,
     homogeneity_score as sklearn_homogeneity_score,
     mutual_info_score as sklearn_mutual_info_score,
+    silhouette_samples as sklearn_silhouette_samples,
     silhouette_score as sklearn_silhouette_score,
 )
 
@@ -28,11 +35,34 @@ from thesis_work.utils.utils import check_device
 # from sklearn.metrics import rand_score
 
 
+logger = logging.getLogger(__name__)
+
+
 @dataclass
 class EvaluationMetric:
     name: str
     function: callable
     need_true_labels: bool
+
+
+def is_valid_cluster_labels(labels):
+    """Check if cluster labels are valid.
+
+    This happens mostly on BUTINA clustering.
+    """
+    n_samples = len(labels)
+    calculated_max_cluster = labels.max()
+    MIN_CLUSTER = 2
+
+    if calculated_max_cluster < MIN_CLUSTER or calculated_max_cluster >= n_samples:
+        logger.error(
+            f"Calculated clusters is {calculated_max_cluster}. Valid values are:"
+            f"{MIN_CLUSTER} to {n_samples - 1} (inclusive)."
+            "Hence, cluster metrics won't be calculated."
+        )
+        return False
+
+    return True
 
 
 def adjusted_rand_index(target, labels, device="cuda"):
@@ -57,6 +87,13 @@ def completeness_index(target, labels, device="cuda"):
     completeness_score = (
         cuml_completeness_score if device == "cuda" else sklearn_completeness_score
     )
+
+    # try:
+    #     return completeness_score(target, labels)
+    # except cupy.cuda.driver.CUDADriverError as e:
+    #     logger.error(f"Caught a CUDADriverError: {e}")
+    #     return None
+
     return completeness_score(target, labels)
 
 
@@ -73,6 +110,7 @@ def homogeneity_index(target, labels, device="cuda"):
     homogeneity_score = (
         cuml_homogeneity_score if device == "cuda" else sklearn_homogeneity_score
     )
+
     return homogeneity_score(target, labels)
 
 
@@ -98,23 +136,99 @@ def silhouette_index(target, labels, device="cuda"):
     Default is 40_000 but it exceeds memory limit of my GPU, since it has 8 GB VRAM.
     Moreover, using chunksize doesn't descrease accuracy: https://github.com/rapidsai/cuml/pull/3362
     - sample_size=chunksize is not necessary for sklearn version
+
+    TODO:
+        - Check maximum data / chunksize ratio with the same accuracy.
+            - Up to 5x it is OK right now.
     """
     check_device(device=device)
 
-    # Maximum working value for my GPU
-    chunksize = 32_000
-
-    if device == "cuda":
-        return cuml_silhouette_score(
-            target, labels, metric="euclidean", chunksize=chunksize
-        )
-    elif device == "cpu":
+    if device == "cpu":
         return sklearn_silhouette_score(target, labels, metric="euclidean")
+
+    # NOTE: This changes wrt data and model type.
+    chunksize = 30_000
+
+    MAX_TRIES = 3
+
+    while True:
+        if MAX_TRIES == 0:
+            logger.error(
+                "GPU Silhouette score calculation failed with 3 tries."
+                "Hence, using sklearn version."
+            )
+            return sklearn_silhouette_score(target, labels, metric="euclidean")
+
+        try:
+            return cuml_silhouette_score(
+                target, labels, metric="euclidean", chunksize=chunksize
+            )
+        except MemoryError:
+            logger.error(
+                f"When calculating silhouette score with chunksize: {chunksize}, "
+                "CUDA out of memory. Trying with smaller chunksize."
+            )
+
+            chunksize = chunksize - 5_000
+            MAX_TRIES -= 1
 
 
 # TODO: Implement quality partition index
 # def quality_partition_index(target, labels, device="cuda"):
 #     pass
+
+
+def silhouette_samples_plot(X, cluster_labels, device="cuda"):
+    """
+    Adapted from https://scikit-learn.org/stable/auto_examples/cluster/plot_kmeans_silhouette_analysis.html
+    """
+    check_device(device=device)
+
+    silhouette_score = (
+        cuml_silhouette_score if device == "cuda" else sklearn_silhouette_score
+    )
+
+    silhouette_samples = (
+        cuml_silhouette_samples if device == "cuda" else sklearn_silhouette_samples
+    )
+
+    sns.set_style("whitegrid")
+    sample_df = pd.DataFrame(
+        silhouette_samples(X, cluster_labels), columns=["Silhouette"]
+    )
+    sample_df["Cluster"] = cluster_labels
+    n_clusters = max(cluster_labels + 1)
+    color_list = [cm.nipy_spectral(float(i) / n_clusters) for i in range(n_clusters)]
+    ax = sns.scatterplot()
+    ax.set_xlim([-0.1, 1])
+    ax.set_ylim([0, len(X) + (n_clusters + 1) * 10])
+    silhouette_avg = silhouette_score(X, cluster_labels)
+    y_lower = 10
+    unique_cluster_ids = sorted(sample_df.Cluster.unique())
+
+    for i in unique_cluster_ids:
+        cluster_df = sample_df.query("Cluster == @i")
+        cluster_size = len(cluster_df)
+        y_upper = y_lower + cluster_size
+        ith_cluster_silhouette_values = cluster_df.sort_values(
+            "Silhouette"
+        ).Silhouette.to_numpy()
+        color = color_list[i]
+        ax.fill_betweenx(
+            np.arange(y_lower, y_upper),
+            0,
+            ith_cluster_silhouette_values,
+            facecolor=color,
+            edgecolor=color,
+            alpha=0.7,
+        )
+        ax.text(-0.05, y_lower + 0.5 * cluster_size, str(i), fontsize="small")
+        y_lower = y_upper + 10
+    ax.axvline(silhouette_avg, color="red", ls="--")
+    ax.set_xlabel("Silhouette Score")
+    ax.set_ylabel("Cluster")
+    ax.set(yticklabels=[])
+    ax.yaxis.grid(False)
 
 
 CLUSTERING_EVALUATION_METRICS = [

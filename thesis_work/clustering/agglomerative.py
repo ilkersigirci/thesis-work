@@ -10,7 +10,7 @@ from thesis_work.utils.utils import check_device
 logger = logging.getLogger(__name__)
 
 
-def apply_agglomerative(  # noqa: PLR0913
+def apply_agglomerative(
     data: np.array,
     n_clusters: int = 2,
     affinity: str = "euclidean",

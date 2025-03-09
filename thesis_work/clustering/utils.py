@@ -41,8 +41,7 @@ def generic_distance_matrix(
         # upper_indices = np.triu_indices(distance_matrix.shape[0], k=1)
         # return distance_matrix[upper_indices]
 
-    else:
-        return pairwise_distances(X=x, metric=metric)
+    return pairwise_distances(X=x, metric=metric)
 
 
 def generic_similarity_matrix(

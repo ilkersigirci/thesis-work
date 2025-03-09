@@ -16,7 +16,6 @@ from rdkit.DataStructs.cDataStructs import ExplicitBitVect
 from sklearn.cluster import KMeans
 from sklearn.datasets import make_blobs
 from sklearn.metrics import silhouette_samples
-
 from thesis_work.utils.initialization import check_initialization_params
 
 logger = logging.getLogger(__name__)
@@ -96,10 +95,7 @@ def log_plotly_figure(figure, name: str, method="static"):
 def is_valid_smiles(smiles: str) -> bool:
     try:
         molecule = Chem.MolFromSmiles(smiles)
-        if molecule is not None:
-            return True
-        else:
-            return False
+        return molecule is not None
     except Exception:
         return False
 
@@ -122,9 +118,10 @@ def get_ecfp_descriptor(
 
         return fpgen.GetFingerprintAsNumPy(mol).astype(np.float32)
 
-    elif return_type == "original":
+    if return_type == "original":
         # return = AllChem.GetMorganFingerprintAsBitVect(mol, radius=radius, nBits=nBits)
         return fpgen.GetFingerprint(mol)
+    return None
 
 
 def get_ecfp_descriptors(
@@ -191,7 +188,7 @@ def get_largest_fragment_from_smiles(s: str):
     return None
 
 
-def plot_global_embeddings_with_clusters(  # noqa: PLR0913
+def plot_global_embeddings_with_clusters(
     df: pd.DataFrame,
     x_col: str,
     y_col: str,
@@ -209,7 +206,7 @@ def plot_global_embeddings_with_clusters(  # noqa: PLR0913
         - Not used right now!
         - From https://github.com/seyonechithrananda/bert-loves-chemistry/blob/master/chemberta/visualization/viz_utils.py
     """
-    clustered = df[cluster_col].values >= 0
+    clustered = df[cluster_col].to_numpy() >= 0
 
     plt.figure(figsize=(10, 8))
     ax = sns.scatterplot(

@@ -7,7 +7,6 @@ import pandas as pd
 import plotly.express as px
 import seaborn as sns
 import wandb
-
 from thesis_work.utils.initialization import check_initialization_params
 
 # import seaborn as sns
@@ -176,11 +175,13 @@ def _process_figure_legend(ax, remove_string: str = ""):
     # For ChemBERTa suffix
     chemberta_suffix = "-77M-MTR"
     labels = [label.replace(chemberta_suffix, "") for label in labels]
-    labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: t[0]))
+    labels, handles = zip(
+        *sorted(zip(labels, handles, strict=False), key=lambda t: t[0]), strict=False
+    )
     ax.legend(handles, labels, loc="lower right")
 
 
-def plot_metric_from_project(  # noqa: PLR0913
+def plot_metric_from_project(
     df: pd.DataFrame,
     # project_name: str,
     metric: str,

@@ -198,7 +198,7 @@ def silhouette_samples_plot(X, cluster_labels, device="cuda"):
     )
     sample_df["Cluster"] = cluster_labels
     n_clusters = max(cluster_labels + 1)
-    color_list = [cm.nipy_spectral(float(i) / n_clusters) for i in range(0, n_clusters)]
+    color_list = [cm.nipy_spectral(float(i) / n_clusters) for i in range(n_clusters)]
     ax = sns.scatterplot()
     ax.set_xlim([-0.1, 1])
     ax.set_ylim([0, len(X) + (n_clusters + 1) * 10])
@@ -212,7 +212,7 @@ def silhouette_samples_plot(X, cluster_labels, device="cuda"):
         y_upper = y_lower + cluster_size
         ith_cluster_silhouette_values = cluster_df.sort_values(
             "Silhouette"
-        ).Silhouette.values
+        ).Silhouette.to_numpy()
         color = color_list[i]
         ax.fill_betweenx(
             np.arange(y_lower, y_upper),

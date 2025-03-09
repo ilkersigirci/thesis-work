@@ -1,4 +1,5 @@
 """Function and class initializations related utilities."""
+
 import inspect
 from typing import Any, Callable, Dict, List, TypeVar
 
@@ -80,5 +81,5 @@ def check_function_init_params(function: Callable, init_params: Dict) -> None:
 
     function_params = get_function_param_names(function)
 
-    for key in init_params.keys():
+    for key in init_params:
         check_initialization_params(attr=key, accepted_list=function_params)

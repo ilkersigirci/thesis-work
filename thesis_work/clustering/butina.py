@@ -7,7 +7,6 @@ NOTE:
     Hence, we need to consider this limitation when clustering big datasets.
 """
 
-
 import logging
 from typing import Optional, Tuple
 
@@ -35,7 +34,7 @@ def calculate_butina_distance_matrix(
     return distances, nfps
 
 
-def apply_butina(  # noqa: PLR0913
+def apply_butina(
     data: np.array,
     model_name: str,
     distance_metric: str = "euclidean",

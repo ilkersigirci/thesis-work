@@ -17,7 +17,7 @@ from thesis_work.utils.utils import check_device
 logger = logging.getLogger(__name__)
 
 
-def apply_pca(  # noqa: PLR0913
+def apply_pca(
     data: np.array,
     n_components: int,
     svd_solver="full",
@@ -62,7 +62,7 @@ def apply_pca(  # noqa: PLR0913
     return transformed_data
 
 
-def apply_umap(  # noqa: PLR0913
+def apply_umap(
     data: np.array,
     n_components: int,
     n_neighbors: int = 15,

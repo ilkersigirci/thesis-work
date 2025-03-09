@@ -3889,17 +3889,13 @@ dependencies = [
     { name = "dagster" },
     { name = "datashader" },
     { name = "deepchem" },
-    { name = "ipython-genutils" },
     { name = "leidenalg" },
     { name = "matplotlib" },
     { name = "mols2grid" },
     { name = "plotly" },
-    { name = "py3dmol" },
     { name = "scikit-learn" },
     { name = "seaborn" },
     { name = "simpletransformers" },
-    { name = "stmol" },
-    { name = "streamlit" },
     { name = "transformers" },
     { name = "umap-learn" },
 ]
@@ -3914,6 +3910,12 @@ dev = [
     { name = "rouge" },
     { name = "ruff" },
 ]
+ui = [
+    { name = "ipython-genutils" },
+    { name = "py3dmol" },
+    { name = "stmol" },
+    { name = "streamlit" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -3924,17 +3926,13 @@ requires-dist = [
     { name = "dagster", specifier = ">=1.10.4" },
     { name = "datashader", specifier = ">=0.17.0" },
     { name = "deepchem", specifier = ">=2.8.0" },
-    { name = "ipython-genutils", specifier = ">=0.2.0" },
     { name = "leidenalg", specifier = ">=0.10.2" },
     { name = "matplotlib", specifier = ">=3.10.1" },
     { name = "mols2grid", specifier = ">=2.0.0" },
     { name = "plotly", specifier = ">=6.0.0" },
-    { name = "py3dmol", specifier = ">=2.4.2" },
     { name = "scikit-learn", specifier = ">=1.6.1" },
     { name = "seaborn", specifier = ">=0.13.2" },
     { name = "simpletransformers", specifier = ">=0.70.1" },
-    { name = "stmol", specifier = ">=0.0.9" },
-    { name = "streamlit", specifier = ">=1.43.1" },
     { name = "transformers", specifier = ">=4.49.0" },
     { name = "umap-learn", specifier = ">=0.5.7" },
 ]
@@ -3948,6 +3946,12 @@ dev = [
     { name = "pre-commit", specifier = ">=4.0.1" },
     { name = "rouge", specifier = ">=1.0.1" },
     { name = "ruff", specifier = "==0.9.2" },
+]
+ui = [
+    { name = "ipython-genutils", specifier = ">=0.2.0" },
+    { name = "py3dmol", specifier = ">=2.4.2" },
+    { name = "stmol", specifier = ">=0.0.9" },
+    { name = "streamlit", specifier = ">=1.43.1" },
 ]
 
 [[package]]

@@ -43,17 +43,13 @@ dependencies = [
     "dagster>=1.10.4",
     "datashader>=0.17.0",
     "deepchem>=2.8.0",
-    "ipython-genutils>=0.2.0", # NOTE: For stmol
     "leidenalg>=0.10.2",
     "matplotlib>=3.10.1",
     "mols2grid>=2.0.0",
     "plotly>=6.0.0",
-    "py3dmol>=2.4.2",
     "scikit-learn>=1.6.1",
     "seaborn>=0.13.2",
     "simpletransformers>=0.70.1",
-    "stmol>=0.0.9",
-    "streamlit>=1.43.1",
     "transformers>=4.49.0",
     "umap-learn>=0.5.7",
 ]
@@ -68,9 +64,15 @@ dev = [
     "plotly>=5.22.0",
     "dagster-webserver>=1.10.4",
 ]
+ui = [
+    "ipython-genutils>=0.2.0", # NOTE: For stmol
+    "stmol>=0.0.9",
+    "py3dmol>=2.4.2",
+    "streamlit>=1.43.1",
+]
 
 [tool.uv]
-default-groups = ["dev"]
+default-groups = ["dev", "ui"]
 
 [tool.ruff]
 target-version = "py310"
